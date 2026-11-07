@@ -1,5 +1,17 @@
-type DocumentData = Record<string, any>;
-type Listener = (snapshot: { docs: { id: string; data: () => DocumentData }[]; forEach: (callback: (doc: { id: string; data: () => DocumentData }) => void) => void }) => void;
+export type DocumentData = Record<string, any>;
+export type DocumentSnapshot = { id: string; data: () => DocumentData };
+export type QuerySnapshot = {
+  docs: DocumentSnapshot[];
+  empty: boolean;
+  forEach: (callback: (doc: DocumentSnapshot) => void) => void;
+};
+export type Listener = (snapshot: QuerySnapshot) => void;
+
+export interface Database {
+  collection(name: string): LocalCollectionReference;
+  batch(): LocalBatch;
+  getCollection(name: string): Record<string, DocumentData>;
+}
 
 const STORAGE_KEY = 'invictus-manager-data';
 
@@ -8,7 +20,20 @@ const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}
 const readStore = (): Record<string, Record<string, DocumentData>> => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
+    const store = stored ? JSON.parse(stored) : {};
+    let removedPasswords = false;
+    if (store.users) {
+      Object.values(store.users).forEach((user: any) => {
+        if ('password' in user) {
+          delete user.password;
+          removedPasswords = true;
+        }
+      });
+    }
+    if (removedPasswords) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    }
+    return store;
   } catch (error) {
     console.error('Unable to read local application data:', error);
     return {};
@@ -17,7 +42,13 @@ const readStore = (): Record<string, Record<string, DocumentData>> => {
 
 const writeStore = (store: Record<string, Record<string, DocumentData>>) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    const safeStore = JSON.parse(JSON.stringify(store));
+    if (safeStore.users) {
+      Object.values(safeStore.users).forEach((user: any) => {
+        delete user.password;
+      });
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeStore));
   } catch (error) {
     console.error('Unable to save local application data:', error);
     throw error;
@@ -51,8 +82,8 @@ const applyUpdate = (document: DocumentData, updates: DocumentData) => {
   return next;
 };
 
-class LocalDocumentReference {
-  constructor(private readonly database: LocalDatabase, private readonly collectionName: string, private readonly id: string) {}
+export class LocalDocumentReference {
+  constructor(private readonly database: LocalDatabase, private readonly collectionName: string, public readonly id: string) {}
 
   update(updates: DocumentData) {
     this.database.update(this.collectionName, this.id, updates);
@@ -70,7 +101,7 @@ class LocalDocumentReference {
   }
 }
 
-class LocalCollectionReference {
+export class LocalCollectionReference {
   constructor(private readonly database: LocalDatabase, private readonly collectionName: string, private readonly limitCount?: number) {}
 
   doc(id = createId()) {
@@ -98,7 +129,7 @@ class LocalCollectionReference {
   }
 }
 
-class LocalBatch {
+export class LocalBatch {
   private readonly operations: (() => void)[] = [];
 
   set(reference: LocalDocumentReference, data: DocumentData) {
@@ -122,7 +153,7 @@ class LocalBatch {
   }
 }
 
-export class LocalDatabase {
+export class LocalDatabase implements Database {
   private store = readStore();
   private readonly listeners = new Map<string, Set<() => void>>();
 

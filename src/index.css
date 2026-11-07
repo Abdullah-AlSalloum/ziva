@@ -1,0 +1,111 @@
+@import "@fontsource/ibm-plex-sans-arabic/400.css";
+@import "@fontsource/ibm-plex-sans-arabic/500.css";
+@import "@fontsource/ibm-plex-sans-arabic/600.css";
+@import "@fontsource/ibm-plex-sans-arabic/700.css";
+@import "@fontsource/noto-kufi-arabic/400.css";
+@import "@fontsource/noto-kufi-arabic/500.css";
+@import "@fontsource/noto-kufi-arabic/600.css";
+@import "@fontsource/noto-kufi-arabic/700.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+}
+
+html[lang="ar"],
+html[lang="ar"] body,
+html[lang="ar"] button,
+html[lang="ar"] input,
+html[lang="ar"] select,
+html[lang="ar"] textarea {
+  font-family: "Noto Kufi Arabic", ui-sans-serif, system-ui, sans-serif;
+}
+
+button:not(:disabled),
+a[href],
+select:not(:disabled),
+summary,
+[role="button"]:not([aria-disabled="true"]),
+[role="option"]:not([aria-disabled="true"]),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+input[type="file"]:not(:disabled),
+label[for] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+button:focus-visible,
+a[href]:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="option"]:focus-visible {
+  outline: 3px solid rgb(129 140 248 / 0.75);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: rgb(99 102 241);
+  box-shadow: 0 0 0 3px rgb(129 140 248 / 0.18);
+}
+
+.dashboard-stat-marquee__track {
+  display: inline-flex;
+  width: max-content;
+  gap: 2rem;
+  animation: dashboard-stat-marquee-ltr 9s linear infinite;
+}
+
+.dashboard-stat-marquee:hover .dashboard-stat-marquee__track,
+.dashboard-stat-marquee:focus-visible .dashboard-stat-marquee__track {
+  animation-play-state: paused;
+}
+
+.dashboard-stat-marquee[dir="rtl"] .dashboard-stat-marquee__track {
+  animation-name: dashboard-stat-marquee-rtl;
+}
+
+@keyframes dashboard-stat-marquee-ltr {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+  82%,
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes dashboard-stat-marquee-rtl {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+  82%,
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-stat-marquee__track {
+    animation: none;
+  }
+}

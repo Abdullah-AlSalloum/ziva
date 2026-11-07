@@ -1,6 +1,6 @@
-import { confirmSignIn, getCurrentUser, signIn } from 'aws-amplify/auth';
+import { confirmSignIn, getCurrentUser, signIn, updatePassword } from 'aws-amplify/auth';
 import { AuthService, AuthenticationResult } from './authService';
-import { User } from './types';
+import { User } from '../../types';
 
 export class CognitoAuthService implements AuthService {
   private pendingUser: User | null = null;
@@ -84,6 +84,16 @@ export class CognitoAuthService implements AuthService {
       console.error('Cognito password change failed:', error);
       const detail = error instanceof Error ? error.name : 'UnknownCognitoError';
       return { success: false, error: 'invalid-credentials', detail };
+    }
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    try {
+      await updatePassword({ oldPassword: currentPassword, newPassword });
+      return { success: true };
+    } catch (error) {
+      console.error('Cognito password update failed:', error);
+      return { success: false, error: 'password-update-failed' };
     }
   }
 

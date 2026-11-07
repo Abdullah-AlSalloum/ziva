@@ -5,13 +5,103 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ziva Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-      }
-    </script>
     <style>
+      :root {
+        color-scheme: light;
+        font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+        background: #f4f7fb;
+      }
+      :root.dark {
+        color-scheme: dark;
+        background: #0f172a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        min-width: 320px;
+        background: #f4f7fb;
+      }
+      html.dark {
+        background: #0f172a;
+      }
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.08), transparent 34rem),
+          #f4f7fb;
+        color: #1e293b;
+        text-rendering: optimizeLegibility;
+      }
+      .dark body {
+        background:
+          radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.14), transparent 34rem),
+          #0f172a;
+        color: #e2e8f0;
+      }
+      ::selection {
+        background: rgba(99, 102, 241, 0.22);
+        color: inherit;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border: 3px solid transparent;
+        border-radius: 999px;
+        background-clip: padding-box;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-color: transparent;
+        background-clip: padding-box;
+      }
+      button, input, select, textarea {
+        font: inherit;
+      }
+      input, select, textarea {
+        transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16) !important;
+      }
+      .app-card {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+      }
+      .dark .app-card {
+        border-color: rgba(51, 65, 85, 0.8);
+        box-shadow: 0 14px 32px rgba(2, 6, 23, 0.22);
+      }
+      .app-header {
+        border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+      }
+      .dark .app-header {
+        border-bottom-color: rgba(51, 65, 85, 0.8);
+        box-shadow: 0 4px 18px rgba(2, 6, 23, 0.18);
+      }
+      .app-sidebar {
+        box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
+      }
+      [dir="rtl"] .app-sidebar {
+        box-shadow: -8px 0 24px rgba(15, 23, 42, 0.04);
+      }
+      .dark .app-sidebar {
+        box-shadow: 8px 0 24px rgba(2, 6, 23, 0.16);
+      }
+      [dir="rtl"] .dark .app-sidebar {
+        box-shadow: -8px 0 24px rgba(2, 6, 23, 0.16);
+      }
       @keyframes fade-in-right {
           from {
               opacity: 0;
@@ -34,22 +124,9 @@
       }
     </style>
     
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "vite": "https://aistudiocdn.com/vite@^7.1.9",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
-    "url": "https://aistudiocdn.com/url@^0.11.4"
-  }
-}
-</script>
 </head>
   <body class="bg-gray-100 dark:bg-gray-900">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

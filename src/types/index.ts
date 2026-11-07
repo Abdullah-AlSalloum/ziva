@@ -9,8 +9,6 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   email?: string;
-  // Temporary local-development credential; replace with Cognito-backed auth before production.
-  password: string;
   hasSetPassword: boolean;
 }
 

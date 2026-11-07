@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Tab } from '../types';
 import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon, UserGroupIcon, ClockIcon } from './icons';
-import { useTranslation } from '../i18n';
-import { translations } from '../translations';
+import { formatNumber, useTranslation } from '../i18n/i18n';
+import { translations } from '../i18n/translations';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -32,7 +32,8 @@ const NavLink: React.FC<{
   badgeColor?: string;
 }> = ({ icon, label, isActive, onClick, direction, badgeCount = 0, badgeColor }) => (
     <button
-        onClick={onClick}
+      type="button"
+      onClick={onClick}
         className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 group ${
             isActive
                 ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300'
@@ -65,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     setIsOpen
 }) => {
-    const { t, direction } = useTranslation(translations);
+    const { language, t, direction } = useTranslation(translations);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
     const inventoryTabs = [Tab.Inventory, Tab.Reorder, Tab.OrderRequests, Tab.DailyOrders, Tab.Backorder];
@@ -76,6 +77,27 @@ const Sidebar: React.FC<SidebarProps> = ({
             setIsInventoryOpen(true);
         }
     }, [isInventoryActive]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isOpen) {
+                setIsOpen(false);
+            }
+        };
+
+        const shouldLockScroll = isOpen && window.innerWidth < 1024;
+        if (shouldLockScroll) {
+            document.body.style.overflow = 'hidden';
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            if (shouldLockScroll) {
+                document.body.style.overflow = '';
+            }
+        };
+    }, [isOpen, setIsOpen]);
 
     const handleLinkClick = (tab: Tab) => {
         setActiveTab(tab);
@@ -96,16 +118,17 @@ const Sidebar: React.FC<SidebarProps> = ({
             ></div>
 
             <aside 
-                className={`fixed lg:relative top-0 z-40 w-64 h-full bg-white dark:bg-gray-800 p-4 ${direction === 'rtl' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : direction === 'rtl' ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:shrink-0 flex flex-col`}
+                id="app-sidebar"
+                className={`app-sidebar fixed top-0 z-40 flex h-full w-[min(18rem,calc(100vw-1rem))] flex-col bg-white p-3 shadow-xl transition-transform duration-300 ease-out dark:bg-slate-900 sm:p-4 ${direction === 'rtl' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200 dark:border-gray-700 ${isOpen ? 'translate-x-0' : direction === 'rtl' ? 'translate-x-full' : '-translate-x-full'} lg:relative lg:w-64 lg:translate-x-0 lg:shrink-0 lg:shadow-none`}
                 aria-label={t('nav.menu')}
             >
-                 <div className="flex items-center justify-between lg:hidden mb-4">
+                 <div className="mb-5 flex items-center justify-between lg:hidden">
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">{t('nav.menu')}</span>
-                    <button onClick={() => setIsOpen(false)} className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700" aria-label={t('nav.closeSidebar')}>
+                    <button onClick={() => setIsOpen(false)} className="rounded-xl p-2 text-gray-400 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700" aria-label={t('nav.closeSidebar')}>
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
-                <nav className="space-y-1">
+                <nav className="min-h-0 flex-1 overflow-y-auto space-y-1 pr-1">
                     <NavLink
                         icon={<HomeIcon />}
                         label={t('nav.dashboard')}
@@ -117,20 +140,24 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {/* Inventory Dropdown */}
                     <div>
                         <button
-                            onClick={() => setIsInventoryOpen(!isInventoryOpen)}
-                            className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 group transition-colors duration-200"
+                                type="button"
+                                onClick={() => setIsInventoryOpen(!isInventoryOpen)}
+                                aria-expanded={isInventoryOpen}
+                                aria-controls="inventory-submenu"
+                                aria-label={`${t('nav.inventory')} - ${isInventoryOpen ? t('nav.collapse') : t('nav.expand')}`}
+                            className={`group flex w-full items-center rounded-xl px-3 py-3 text-sm font-medium transition-colors duration-200 ${isInventoryActive ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}`}
                         >
                             <ArchiveBoxIcon className={`h-6 w-6 ${direction === 'rtl' ? 'ml-3' : 'mr-3'} ${isInventoryActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}`} />
                             <span className={`flex-1 ${direction === 'rtl' ? 'text-right' : 'text-left'} ${isInventoryActive ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}>{t('nav.inventory')}</span>
                             {inventoryBadgeTotal > 0 && (
                                 <span className="ml-auto mr-2 inline-block py-0.5 px-2 text-xs font-bold rounded-full bg-indigo-500 text-white">
-                                    {inventoryBadgeTotal}
+                                    {formatNumber(inventoryBadgeTotal, language)}
                                 </span>
                             )}
                             <ChevronDownIcon className={`h-5 w-5 transform transition-transform duration-200 ${isInventoryOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        <div className={`pl-5 overflow-hidden transition-all duration-300 ease-in-out ${isInventoryOpen ? 'max-h-96' : 'max-h-0'}`}>
-                            <div className="pt-1 space-y-1 border-l border-gray-200 dark:border-gray-600 ml-4 pl-4">
+                        <div id="inventory-submenu" className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${isInventoryOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className={`${direction === 'rtl' ? 'mr-4 border-r pr-4' : 'ml-4 border-l pl-4'} space-y-1 pt-1 border-gray-200 dark:border-gray-600`}>
                                 <NavLink
                                     icon={<ListBulletIcon />}
                                     label={t('nav.inStock')}
