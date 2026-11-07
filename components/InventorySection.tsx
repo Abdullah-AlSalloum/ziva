@@ -3,6 +3,8 @@ import { InventoryItem, User } from '../types';
 import { PlusIcon, MinusIcon, SearchIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, TrashIcon, PencilIcon, ChevronUpIcon, ChevronDownIcon } from './icons';
 import Avatar from './Avatar';
 import EditItemModal from './EditItemModal';
+import { useTranslation } from '../i18n';
+import { translations } from '../translations';
 
 interface InventorySectionProps {
   items: InventoryItem[];
@@ -17,6 +19,7 @@ interface InventorySectionProps {
 type SortKey = 'reference' | 'name' | 'type' | 'quantity';
 
 const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onCancel: () => void }> = ({ onAddItem, onCancel }) => {
+  const { t } = useTranslation(translations);
   const [reference, setReference] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
@@ -36,15 +39,15 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add New Stock Item</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('inventory.addNew')}</h3>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <input type="text" placeholder="Reference" value={reference} onChange={e => setReference(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <input type="text" placeholder="Item Name" value={name} onChange={e => setName(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <input type="text" placeholder="Item Type" value={type} onChange={e => setType(e.target.value)} required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-            <input type="number" placeholder="Quantity (>=3)" value={quantity} onChange={e => setQuantity(parseInt(e.target.value, 10))} min="3" required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <input type="text" placeholder={t('inventory.reference')} value={reference} onChange={e => setReference(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <input type="text" placeholder={t('inventory.itemName')} value={name} onChange={e => setName(e.target.value)} required className="md:col-span-2 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <input type="text" placeholder={t('inventory.itemType')} value={type} onChange={e => setType(e.target.value)} required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <input type="number" placeholder={t('inventory.quantityMinimum')} value={quantity} onChange={e => setQuantity(parseInt(e.target.value, 10))} min="3" required className="md:col-span-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <div className="md:col-span-6 flex justify-end space-x-3">
-                <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Cancel</button>
-                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Add Item</button>
+                <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{t('inventory.cancel')}</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{t('inventory.add')}</button>
             </div>
         </form>
     </div>
@@ -73,6 +76,7 @@ const SortableHeader: React.FC<{
 
 
 const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpdateQuantity, onAddItem, onImportItems, onRemoveItem, onUpdateItem }) => {
+  const { t } = useTranslation(translations);
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -190,7 +194,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
   return (
     <div>
         <div className="sm:flex sm:items-center sm:justify-between mb-4 gap-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">In Stock Items</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('inventory.inStockItems')}</h2>
             <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -198,7 +202,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                     </div>
                     <input
                         type="search"
-                        placeholder="Search by ref, name, type..."
+                        placeholder={t('inventory.search')}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="block w-full sm:w-56 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -208,15 +212,15 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" style={{ display: 'none' }} />
                      <button onClick={handleImportClick} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                        Import
+                        {t('inventory.import')}
                     </button>
                      <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
-                        Export
+                        {t('inventory.export')}
                     </button>
                     <button onClick={() => setShowAddForm(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       <PlusIcon className="w-5 h-5 mr-2" />
-                      Add
+                      {t('inventory.add')}
                     </button>
                 </div>
             </div>
@@ -229,12 +233,12 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <SortableHeader label="Reference" sortKey="reference" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-                <SortableHeader label="Item Name" sortKey="name" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-                <SortableHeader label="Type" sortKey="type" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Managed By</th>
-                <SortableHeader label="Quantity" sortKey="quantity" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} className="text-center" />
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                <SortableHeader label={t('inventory.reference')} sortKey="reference" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
+                <SortableHeader label={t('inventory.itemName')} sortKey="name" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
+                <SortableHeader label={t('inventory.itemType')} sortKey="type" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('inventory.managedBy')}</th>
+                <SortableHeader label={t('inventory.quantity')} sortKey="quantity" currentSortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} className="text-center" />
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('inventory.actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -282,7 +286,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
               )}) : (
                 <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-                        {searchTerm ? `No items found for "${searchTerm}".` : 'No items in stock. Add one to get started!'}
+                        {searchTerm ? `${t('inventory.noSearchResults')} "${searchTerm}".` : t('inventory.noItems')}
                     </td>
                 </tr>
               )}

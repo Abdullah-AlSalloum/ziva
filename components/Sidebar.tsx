@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Tab } from '../types';
 import { HomeIcon, ArchiveBoxIcon, PlusIcon, ListBulletIcon, ClipboardDocumentCheckIcon, TruckIcon, XMarkIcon, ChevronDownIcon, InformationCircleIcon, UserGroupIcon, ClockIcon } from './icons';
+import { useTranslation } from '../i18n';
+import { translations } from '../translations';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -25,9 +27,10 @@ const NavLink: React.FC<{
   label: string;
   isActive: boolean;
   onClick: () => void;
+  direction: 'ltr' | 'rtl';
   badgeCount?: number;
   badgeColor?: string;
-}> = ({ icon, label, isActive, onClick, badgeCount = 0, badgeColor }) => (
+}> = ({ icon, label, isActive, onClick, direction, badgeCount = 0, badgeColor }) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 group ${
@@ -37,10 +40,10 @@ const NavLink: React.FC<{
         }`}
     >
         {/* FIX: Removed unnecessary type assertion `as React.ReactElement` as the `icon` prop is now correctly typed. */}
-        {React.cloneElement(icon, { className: `h-6 w-6 mr-3 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}` })}
-        <span className="flex-1 text-left">{label}</span>
+        {React.cloneElement(icon, { className: `h-6 w-6 ${direction === 'rtl' ? 'ml-3' : 'mr-3'} ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}` })}
+        <span className={`flex-1 ${direction === 'rtl' ? 'text-right' : 'text-left'}`}>{label}</span>
         {badgeCount > 0 && (
-            <span className={`ml-auto inline-block py-0.5 px-2 text-xs font-bold rounded-full ${badgeColor || 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200'}`}>
+            <span className={`${direction === 'rtl' ? 'mr-auto' : 'ml-auto'} inline-block py-0.5 px-2 text-xs font-bold rounded-full ${badgeColor || 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200'}`}>
                 {badgeCount}
             </span>
         )}
@@ -62,6 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     setIsOpen
 }) => {
+    const { t, direction } = useTranslation(translations);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
     const inventoryTabs = [Tab.Inventory, Tab.Reorder, Tab.OrderRequests, Tab.DailyOrders, Tab.Backorder];
@@ -92,19 +96,20 @@ const Sidebar: React.FC<SidebarProps> = ({
             ></div>
 
             <aside 
-                className={`fixed lg:relative top-0 left-0 z-40 w-64 h-full bg-white dark:bg-gray-800 p-4 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:shrink-0 flex flex-col`}
-                aria-label="Sidebar"
+                className={`fixed lg:relative top-0 z-40 w-64 h-full bg-white dark:bg-gray-800 p-4 ${direction === 'rtl' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : direction === 'rtl' ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:shrink-0 flex flex-col`}
+                aria-label={t('nav.menu')}
             >
                  <div className="flex items-center justify-between lg:hidden mb-4">
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">Menu</span>
-                    <button onClick={() => setIsOpen(false)} className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700" aria-label="Close sidebar">
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">{t('nav.menu')}</span>
+                    <button onClick={() => setIsOpen(false)} className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700" aria-label={t('nav.closeSidebar')}>
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
                 <nav className="space-y-1">
                     <NavLink
                         icon={<HomeIcon />}
-                        label="Dashboard"
+                        label={t('nav.dashboard')}
+                        direction={direction}
                         isActive={activeTab === Tab.Dashboard}
                         onClick={() => handleLinkClick(Tab.Dashboard)}
                     />
@@ -115,8 +120,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             onClick={() => setIsInventoryOpen(!isInventoryOpen)}
                             className="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 group transition-colors duration-200"
                         >
-                            <ArchiveBoxIcon className={`h-6 w-6 mr-3 ${isInventoryActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}`} />
-                            <span className={`flex-1 text-left ${isInventoryActive ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}>Inventory</span>
+                            <ArchiveBoxIcon className={`h-6 w-6 ${direction === 'rtl' ? 'ml-3' : 'mr-3'} ${isInventoryActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'}`} />
+                            <span className={`flex-1 ${direction === 'rtl' ? 'text-right' : 'text-left'} ${isInventoryActive ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}>{t('nav.inventory')}</span>
                             {inventoryBadgeTotal > 0 && (
                                 <span className="ml-auto mr-2 inline-block py-0.5 px-2 text-xs font-bold rounded-full bg-indigo-500 text-white">
                                     {inventoryBadgeTotal}
@@ -128,14 +133,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <div className="pt-1 space-y-1 border-l border-gray-200 dark:border-gray-600 ml-4 pl-4">
                                 <NavLink
                                     icon={<ListBulletIcon />}
-                                    label="In Stock"
+                                    label={t('nav.inStock')}
+                                    direction={direction}
                                     isActive={activeTab === Tab.Inventory}
                                     onClick={() => handleLinkClick(Tab.Inventory)}
                                     badgeCount={stockItemsCount}
                                 />
                                 <NavLink
                                     icon={<PlusIcon />}
-                                    label="Reorder Needed"
+                                    label={t('nav.reorderNeeded')}
+                                    direction={direction}
                                     isActive={activeTab === Tab.Reorder}
                                     onClick={() => handleLinkClick(Tab.Reorder)}
                                     badgeCount={reorderItemsCount}
@@ -143,7 +150,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 />
                                 <NavLink
                                     icon={<InformationCircleIcon />}
-                                    label="Order Requests"
+                                    label={t('nav.orderRequests')}
+                                    direction={direction}
                                     isActive={activeTab === Tab.OrderRequests}
                                     onClick={() => handleLinkClick(Tab.OrderRequests)}
                                     badgeCount={orderRequestsCount}
@@ -151,7 +159,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 />
                                 <NavLink
                                     icon={<TruckIcon />}
-                                    label="Daily Orders"
+                                    label={t('nav.dailyOrders')}
+                                    direction={direction}
                                     isActive={activeTab === Tab.DailyOrders}
                                     onClick={() => handleLinkClick(Tab.DailyOrders)}
                                     badgeCount={dailyOrdersCount}
@@ -159,7 +168,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 />
                                  <NavLink
                                     icon={<ClockIcon />}
-                                    label="Backorder"
+                                    label={t('nav.backorder')}
+                                    direction={direction}
                                     isActive={activeTab === Tab.Backorder}
                                     onClick={() => handleLinkClick(Tab.Backorder)}
                                     badgeCount={backordersCount}
@@ -171,7 +181,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     <NavLink
                         icon={<ClipboardDocumentCheckIcon />}
-                        label="Team Tasks"
+                        label={t('nav.teamTasks')}
+                        direction={direction}
                         isActive={activeTab === Tab.Tasks}
                         onClick={() => handleLinkClick(Tab.Tasks)}
                         badgeCount={tasksCount}
@@ -179,7 +190,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     />
                     <NavLink
                         icon={<UserGroupIcon />}
-                        label="Laboratories"
+                        label={t('nav.laboratories')}
+                        direction={direction}
                         isActive={activeTab === Tab.Laboratories}
                         onClick={() => handleLinkClick(Tab.Laboratories)}
                         badgeCount={laboratoriesCount}
@@ -188,7 +200,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {canManageUsers && (
                         <NavLink
                             icon={<UserGroupIcon />}
-                            label="Users"
+                            label={t('nav.users')}
+                            direction={direction}
                             isActive={activeTab === Tab.Users}
                             onClick={() => handleLinkClick(Tab.Users)}
                         />

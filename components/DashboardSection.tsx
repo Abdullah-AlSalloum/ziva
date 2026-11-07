@@ -3,6 +3,8 @@ import React, { useMemo } from 'react';
 import { InventoryItem, User, Task, DailyOrder, OrderRequest, Tab } from '../types';
 import { PlusIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon } from './icons';
 import Avatar from './Avatar';
+import { formatDate, formatNumber, useTranslation } from '../i18n';
+import { translations } from '../translations';
 
 interface DashboardSectionProps {
     currentUser: User;
@@ -35,6 +37,7 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode; 
 );
 
 const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users, inventory, tasks, dailyOrders, orderRequests, onTabChange }) => {
+    const { language, t } = useTranslation(translations);
     
     const reorderItemsCount = useMemo(() => inventory.filter(item => item.quantity < 3).length, [inventory]);
     const myPendingTasks = useMemo(() => tasks.filter(task => task.assignedTo === currentUser.id && task.status !== 'Completed'), [tasks, currentUser.id]);
@@ -48,24 +51,24 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
         const activities: ActivityItem[] = [];
 
         inventory.forEach(item => {
-            activities.push({ type: 'INVENTORY_ADD', timestamp: item.createdAt, user: getUser(item.managedBy), details: `added "${item.name}" to stock.` });
+            activities.push({ type: 'INVENTORY_ADD', timestamp: item.createdAt, user: getUser(item.managedBy), details: item.name });
         });
 
         tasks.forEach(task => {
-            activities.push({ type: 'TASK_ADD', timestamp: task.createdAt, user: getUser(task.createdBy), targetUser: getUser(task.assignedTo), details: `assigned a task to` });
+            activities.push({ type: 'TASK_ADD', timestamp: task.createdAt, user: getUser(task.createdBy), targetUser: getUser(task.assignedTo), details: task.description });
             if (task.status === 'Completed') {
                 // This is a simplification; we'd need a `completedAt` timestamp for accuracy. We'll use dueDate for now.
-                activities.push({ type: 'TASK_COMPLETE', timestamp: task.dueDate, user: getUser(task.assignedTo), details: `completed task: "${task.description}"` });
+                activities.push({ type: 'TASK_COMPLETE', timestamp: task.dueDate, user: getUser(task.assignedTo), details: task.description });
             }
         });
 
         dailyOrders.forEach(order => {
-             activities.push({ type: 'ORDER_LOG', timestamp: order.createdAt, user: currentUser, details: `logged an order for "${order.customerName}".` });
+             activities.push({ type: 'ORDER_LOG', timestamp: order.createdAt, user: currentUser, details: order.customerName });
         });
         
         orderRequests.forEach(req => {
 // FIX: Corrected property from `itemName` to `customerName` to align with the `OrderRequest` type. The activity message and user have also been updated for better clarity.
-            activities.push({ type: 'REQUEST_ADD', timestamp: req.createdAt, user: getUser(req.userId), details: `logged a new order request from "${req.customerName}".` });
+            activities.push({ type: 'REQUEST_ADD', timestamp: req.createdAt, user: getUser(req.userId), details: req.customerName });
         })
 
         return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
@@ -75,16 +78,16 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
         const date = new Date(isoString);
         const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
         let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + " years ago";
+        if (interval > 1) return `${formatNumber(Math.floor(interval), language)} ${t('time.yearsAgo')}`;
         interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " months ago";
+        if (interval > 1) return `${formatNumber(Math.floor(interval), language)} ${t('time.monthsAgo')}`;
         interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
+        if (interval > 1) return `${formatNumber(Math.floor(interval), language)} ${t('time.daysAgo')}`;
         interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
+        if (interval > 1) return `${formatNumber(Math.floor(interval), language)} ${t('time.hoursAgo')}`;
         interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " minutes ago";
-        return Math.floor(seconds) + " seconds ago";
+        if (interval > 1) return `${formatNumber(Math.floor(interval), language)} ${t('time.minutesAgo')}`;
+        return `${formatNumber(Math.floor(seconds), language)} ${t('time.secondsAgo')}`;
     };
 
     return (
@@ -93,16 +96,16 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
             <div className="lg:col-span-2 space-y-6">
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatCard title="Items to Reorder" value={reorderItemsCount} icon={<BellIcon className="h-6 w-6 text-red-800 dark:text-red-200" />} color="bg-red-100 dark:bg-red-900/50" onClick={() => onTabChange(Tab.Reorder)} />
-                    <StatCard title="Your Pending Tasks" value={myPendingTasks.length} icon={<ClipboardDocumentCheckIcon className="h-6 w-6 text-sky-800 dark:text-sky-200" />} color="bg-sky-100 dark:bg-sky-900/50" onClick={() => onTabChange(Tab.Tasks)} />
-                    <StatCard title="Today's Orders Sent" value={todaysOrdersCount} icon={<TruckIcon className="h-6 w-6 text-emerald-800 dark:text-emerald-200" />} color="bg-emerald-100 dark:bg-emerald-900/50" onClick={() => onTabChange(Tab.DailyOrders)} />
+                    <StatCard title={t('dashboard.itemsToReorder')} value={reorderItemsCount} icon={<BellIcon className="h-6 w-6 text-red-800 dark:text-red-200" />} color="bg-red-100 dark:bg-red-900/50" onClick={() => onTabChange(Tab.Reorder)} />
+                    <StatCard title={t('dashboard.pendingTasks')} value={myPendingTasks.length} icon={<ClipboardDocumentCheckIcon className="h-6 w-6 text-sky-800 dark:text-sky-200" />} color="bg-sky-100 dark:bg-sky-900/50" onClick={() => onTabChange(Tab.Tasks)} />
+                    <StatCard title={t('dashboard.ordersSentToday')} value={todaysOrdersCount} icon={<TruckIcon className="h-6 w-6 text-emerald-800 dark:text-emerald-200" />} color="bg-emerald-100 dark:bg-emerald-900/50" onClick={() => onTabChange(Tab.DailyOrders)} />
                 </div>
                 
                 {/* My Tasks Section */}
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">My Pending Tasks</h3>
-                        <button onClick={() => onTabChange(Tab.Tasks)} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">View All</button>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('dashboard.myPendingTasks')}</h3>
+                        <button onClick={() => onTabChange(Tab.Tasks)} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{t('dashboard.viewAll')}</button>
                     </div>
                      {myPendingTasks.length > 0 ? (
                         <ul className="space-y-4">
@@ -111,7 +114,7 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
                                     <div>
                                         <p className="font-medium text-gray-800 dark:text-gray-200">{task.description}</p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            By {getUser(task.createdBy)?.name || 'N/A'} &bull; Due {new Date(task.dueDate).toLocaleDateString()}
+                                            {t('dashboard.by')} {getUser(task.createdBy)?.name || 'N/A'} &bull; {t('dashboard.due')} {formatDate(task.dueDate, language)}
                                         </p>
                                     </div>
                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${task.status === 'In Progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50' : 'bg-gray-100 text-gray-800 dark:bg-gray-600'}`}>
@@ -121,14 +124,14 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-center py-4 text-gray-500 dark:text-gray-400">You have no pending tasks. Great job!</p>
+                        <p className="text-center py-4 text-gray-500 dark:text-gray-400">{t('dashboard.noPendingTasks')}</p>
                     )}
                 </div>
             </div>
 
             {/* Right Sidebar Column */}
             <div className="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('dashboard.recentActivity')}</h3>
                 <ul className="space-y-4">
                    {recentActivity.map((activity, index) => (
                        <li key={index} className="flex space-x-3">
@@ -137,7 +140,12 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({ currentUser, users,
                            </div>
                            <div className="flex-1">
                                <p className="text-sm text-gray-800 dark:text-gray-200">
-                                   <span className="font-bold">{activity.user?.name || 'System'}</span> {activity.details} {activity.targetUser && <span className="font-bold">{activity.targetUser.name}</span>}
+                                   <span className="font-bold">{activity.user?.name || t('dashboard.system')}</span>{' '}
+                                   {activity.type === 'INVENTORY_ADD' && `${t('activity.addedToStock')} "${activity.details}"`}
+                                   {activity.type === 'TASK_ADD' && <>{t('activity.assignedTask')} <span className="font-bold">{activity.targetUser?.name}</span></>}
+                                   {activity.type === 'TASK_COMPLETE' && <>{t('activity.completedTask')} "{activity.details}"</>}
+                                   {activity.type === 'ORDER_LOG' && `${t('activity.loggedOrder')} "${activity.details}".`}
+                                   {activity.type === 'REQUEST_ADD' && `${t('activity.loggedRequest')} "${activity.details}".`}
                                </p>
                                <p className="text-xs text-gray-400">{formatTimeAgo(activity.timestamp)}</p>
                            </div>

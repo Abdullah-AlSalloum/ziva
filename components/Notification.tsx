@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { XMarkIcon, BellIcon } from './icons';
+import { useTranslation } from '../i18n';
+import { translations } from '../translations';
 
 interface NotificationToastProps {
   message: string;
@@ -7,6 +9,7 @@ interface NotificationToastProps {
 }
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ message, onDismiss }) => {
+  const { t } = useTranslation(translations);
   useEffect(() => {
     const timer = setTimeout(() => {
       onDismiss();
@@ -22,7 +25,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ message, onDismis
           <BellIcon className="h-6 w-6 text-indigo-500" />
         </div>
         <div className="ml-3 w-0 flex-1 pt-0.5">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">New Notification</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">{t('notifications.new')}</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{message}</p>
         </div>
         <div className="ml-4 flex-shrink-0 flex">
@@ -30,7 +33,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ message, onDismis
             onClick={onDismiss}
             className="inline-flex text-gray-400 rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-indigo-500"
           >
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('notifications.close')}</span>
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>

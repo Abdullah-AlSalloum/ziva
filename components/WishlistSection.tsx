@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { OrderRequest, User, OrderItem, InventoryItem } from '../types';
 import { PlusIcon, TrashIcon, MinusIcon, ClockIcon } from './icons';
 import Avatar from './Avatar';
+import { formatDate, formatNumber, useTranslation } from '../i18n';
+import { translations } from '../translations';
 
 interface OrderRequestSectionProps {
   items: OrderRequest[];
@@ -13,6 +15,7 @@ interface OrderRequestSectionProps {
 }
 
 const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users, inventory, onAddItem, onRemoveItem, onMoveToBackorder }) => {
+  const { language, t } = useTranslation(translations);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([{ name: '', quantity: 1 }]);
   const [customerName, setCustomerName] = useState('');
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
@@ -64,7 +67,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
   };
 
   const handleRemoveClick = (order: OrderRequest) => {
-    if (window.confirm(`Are you sure you want to remove the order request for "${order.customerName}"? This action cannot be undone.`)) {
+    if (window.confirm(t('orderRequests.removeConfirmation').replace('{name}', order.customerName))) {
         onRemoveItem(order.id);
     }
   };
@@ -107,18 +110,18 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Pending Order Requests</h2>
+      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">{t('orderRequests.title')}</h2>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Log a New Request</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('orderRequests.logNew')}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="order-customer" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Name</label>
+              <label htmlFor="order-customer" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('orderRequests.customerName')}</label>
               <input type="text" id="order-customer" value={customerName} onChange={e => setCustomerName(e.target.value)} required className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requested Items</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('orderRequests.requestedItems')}</label>
               <div className="space-y-2 mt-1">
                 {orderItems.map((item, index) => {
                   const filteredInventory = item.name
@@ -146,7 +149,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                           onFocus={() => setActiveItemIndex(index)}
                           onBlur={() => setTimeout(() => setActiveItemIndex(null), 200)}
                           required
-                          placeholder="Search or type item name..."
+                          placeholder={t('orderRequests.searchItem')}
                           autoComplete="off"
                           className="block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                         />
@@ -166,12 +169,12 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                                       invItem.quantity > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                     }`}>
-                                      {invItem.quantity} in stock
+                                      {formatNumber(invItem.quantity, language)} {t('orderRequests.inStock')}
                                     </span>
                                   </li>
                                 ))
                               ) : (
-                                <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 italic">No items found. You can still add it.</li>
+                                <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 italic">{t('orderRequests.noItemsFound')}</li>
                               )}
                             </ul>
                           </div>
@@ -186,12 +189,12 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                               onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                               min="1"
                               required
-                              placeholder="Qty"
+                              placeholder={t('orderRequests.quantity')}
                               className="block w-20 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
                             />
                             {inventoryItem != null && (
                               <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-1">
-                                {inventoryItem.quantity} in stock
+                                {formatNumber(inventoryItem.quantity, language)} {t('orderRequests.inStock')}
                               </span>
                             )}
                           </div>
@@ -200,7 +203,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                             onClick={() => handleRemoveItemField(index)}
                             disabled={orderItems.length <= 1}
                             className="p-2 self-center rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Remove item"
+                            aria-label={t('orderRequests.removeItem')}
                           >
                             <MinusIcon className="h-5 w-5" />
                           </button>
@@ -216,13 +219,13 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                 className="mt-2 inline-flex items-center px-3 py-1.5 border border-dashed border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <PlusIcon className="w-4 h-4 mr-2" />
-                Add another item
+                {t('orderRequests.addAnother')}
               </button>
             </div>
             
             <div className="flex justify-end">
               <button type="submit" className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
-                <PlusIcon className="w-5 h-5 mr-2" /> Add Request
+                <PlusIcon className="w-5 h-5 mr-2" /> {t('orderRequests.addRequest')}
               </button>
             </div>
           </form>
@@ -230,8 +233,8 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
       
       {items.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">No pending requests.</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Log uncompleted orders or customer requests here.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('orderRequests.noPending')}</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('orderRequests.emptyHint')}</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -252,7 +255,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                 <div className="flex items-start justify-between flex-wrap gap-2">
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                            {new Date(order.createdAt).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            {formatDate(order.createdAt, language)}
                         </p>
                         
                         <div className="text-base text-gray-800 dark:text-gray-200 mt-2">
@@ -260,10 +263,10 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                         </div>
                         
                         <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            <p>For: <span className="font-medium text-gray-700 dark:text-gray-300">{order.customerName}</span></p>
+                            <p>{t('orderRequests.for')} <span className="font-medium text-gray-700 dark:text-gray-300">{order.customerName}</span></p>
                             {user && (
-                                <div className="flex items-center" title={`Created by ${user.name}`}>
-                                    <span>By:</span>
+                                <div className="flex items-center" title={`${t('orderRequests.createdBy')} ${user.name}`}>
+                                    <span>{t('orderRequests.by')}</span>
                                     <div className="ml-1.5 flex items-center">
                                       <Avatar name={user.name} size="small"/>
                                       <span className="ml-1.5 font-medium text-gray-700 dark:text-gray-300">{user.name}</span>
@@ -277,13 +280,13 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                             <button 
                                 onClick={() => onMoveToBackorder(order)}
                                 className="p-2 rounded-full text-gray-400 hover:text-yellow-600 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-800 focus:ring-yellow-500" 
-                                title="Move to Backorder"
+                                title={t('orderRequests.moveToBackorder')}
                             >
-                                <span className="sr-only">Move to Backorder</span>
+                                <span className="sr-only">{t('orderRequests.moveToBackorder')}</span>
                                 <ClockIcon className="h-5 w-5" />
                             </button>
                         )}
-                        <button onClick={() => handleRemoveClick(order)} className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-800 focus:ring-red-500" aria-label={`Remove order for ${order.customerName}`}>
+                        <button onClick={() => handleRemoveClick(order)} className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-800 focus:ring-red-500" aria-label={`${t('orderRequests.removeOrder')} ${order.customerName}`}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>

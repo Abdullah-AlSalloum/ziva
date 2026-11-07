@@ -1,7 +1,7 @@
 
-# Invictus Manager
+# Ziva Manager
 
-Invictus Manager is a comprehensive, responsive inventory management system designed for a small team. It provides a full suite of tools to track inventory, manage team tasks, log orders, and maintain operational awareness through a central dashboard.
+Ziva Manager is a comprehensive, responsive inventory management system designed for a small team. It provides a full suite of tools to track inventory, manage team tasks, log orders, and maintain operational awareness through a central dashboard.
 
 ## Features
 

@@ -5,6 +5,8 @@ import { createLocalAuthService } from '../authService';
 import { CognitoAuthService } from '../cognitoAuthService';
 import { configureCognito } from '../cognitoConfig';
 import { clearStoredUserId, getStoredUserId, storeUserId } from '../authSession';
+import { getStoredLanguage, useTranslation } from '../i18n';
+import { translations } from '../translations';
 import Header from '../components/Header';
 import DashboardSection from '../components/DashboardSection';
 import InventorySection from '../components/InventorySection';
@@ -65,6 +67,7 @@ const LoadingScreen: FC<{ message: string }> = ({ message }) => (
 
 
 const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: string) => void; error?: string; }> = ({ users, onLogin, error: externalError }) => {
+    const { t } = useTranslation(translations);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -75,7 +78,7 @@ const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: strin
         setError('');
 
         if (!password) {
-            setError('Enter your password to continue.');
+            setError(t('auth.enterPassword'));
             return;
         }
 
@@ -90,15 +93,15 @@ const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: strin
               <svg className="h-10 w-10 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
               </svg>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Invictus Manager</h1>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t('app.name')}</h1>
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 sm:p-8">
-            <h2 className="text-center text-xl font-semibold text-gray-800 dark:text-gray-200">Sign in to your account</h2>
-            <p className="text-center text-gray-500 dark:text-gray-400 mt-1 mb-6">Use your assigned username and password.</p>
+            <h2 className="text-center text-xl font-semibold text-gray-800 dark:text-gray-200">{t('auth.signInTitle')}</h2>
+            <p className="text-center text-gray-500 dark:text-gray-400 mt-1 mb-6">{t('auth.signInSubtitle')}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username or email</label>
+                    <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('auth.usernameOrEmail')}</label>
                     <input
                         id="login-username"
                         type="text"
@@ -111,7 +114,7 @@ const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: strin
                     />
                 </div>
                 <div>
-                    <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('auth.password')}</label>
                     <div className="relative mt-1">
                         <input
                             id="login-password"
@@ -125,7 +128,7 @@ const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: strin
                         <button
                             type="button"
                             onClick={() => setShowPassword(previous => !previous)}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                             className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 rounded-r-md"
                         >
                             {showPassword
@@ -143,7 +146,7 @@ const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: strin
                     </div>
                 )}
                 <button type="submit" className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Sign in
+                    {t('auth.signIn')}
                 </button>
             </form>
         </div>
@@ -157,6 +160,7 @@ const AuthModal: FC<{
     onLogin: (password: string) => void;
     onClose: () => void;
 }> = ({ selectedUser, onLogin, onClose }) => {
+    const { t } = useTranslation(translations);
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -165,7 +169,7 @@ const AuthModal: FC<{
         e.preventDefault();
         setError('');
         if (!password) {
-            setError('Password cannot be empty.');
+            setError(t('auth.passwordEmpty'));
             return;
         }
         onLogin(password);
@@ -189,7 +193,7 @@ const AuthModal: FC<{
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="password" className="sr-only">Password</label>
+                    <label htmlFor="password" className="sr-only">{t('auth.password')}</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <LockClosedIcon className="h-5 w-5 text-gray-400" />
@@ -198,7 +202,7 @@ const AuthModal: FC<{
                             id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password"
                             required autoFocus value={password} onChange={(e) => setPassword(e.target.value)}
                             className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                            placeholder="Password"
+                            placeholder={t('auth.password')}
                         />
                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-500">
@@ -211,7 +215,7 @@ const AuthModal: FC<{
                 <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Sign In
                 </button>
-                 <button type="button" onClick={onClose} className="w-full text-center py-2 text-sm text-gray-600 dark:text-gray-400 hover:underline">Cancel</button>
+                 <button type="button" onClick={onClose} className="w-full text-center py-2 text-sm text-gray-600 dark:text-gray-400 hover:underline">{t('auth.cancel')}</button>
             </form>
         </div>
        </div>
@@ -224,6 +228,7 @@ const PasswordModal: FC<{
     onClose: () => void;
     isFirstTimeSetup?: boolean;
 }> = ({ title, onSave, onClose, isFirstTimeSetup = false }) => {
+    const { t } = useTranslation(translations);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -233,11 +238,11 @@ const PasswordModal: FC<{
         e.preventDefault();
         setError('');
         if (newPassword.length < 6) {
-            setError('New password must be at least 6 characters long.');
+            setError(t('auth.passwordMinLength'));
             return;
         }
         if (newPassword !== confirmPassword) {
-            setError('New passwords do not match.');
+            setError(t('auth.passwordMismatch'));
             return;
         }
         onSave({ currentPassword, newPassword });
@@ -280,6 +285,7 @@ const PasswordModal: FC<{
 
 
 const App: React.FC = () => {
+  const { language, direction } = useTranslation(translations);
   const [db] = useState(() => new LocalDatabase());
   const [authService] = useState(() => {
     const hasCognitoConfig = configureCognito();
@@ -304,6 +310,11 @@ const App: React.FC = () => {
   const [activeNotifications, setActiveNotifications] = useState<{id: number; message: string}[]>([]);
   const notificationIdCounter = useRef(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = direction;
+  }, [direction, language]);
   
   useEffect(() => {
     // --- Seeding Logic ---
@@ -726,7 +737,7 @@ const App: React.FC = () => {
             {users.length > 0 ? (
                 <LoginPage users={users} onLogin={handleLogin} error={loginError} />
             ) : (
-                <LoadingScreen message="Loading user profiles..." />
+                <LoadingScreen message={translations[getStoredLanguage()]['status.loadingUsers']} />
             )}
             {selectedUserForLogin && !isSettingFirstPassword && (
                 <AuthModal
