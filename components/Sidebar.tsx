@@ -12,6 +12,7 @@ interface SidebarProps {
   dailyOrdersCount: number;
   laboratoriesCount: number;
   backordersCount: number;
+  canManageUsers: boolean;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -57,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     dailyOrdersCount,
     laboratoriesCount,
     backordersCount,
+    canManageUsers,
     isOpen,
     setIsOpen
 }) => {
@@ -183,6 +185,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                         badgeCount={laboratoriesCount}
                         badgeColor="bg-purple-500 text-white"
                     />
+                    {canManageUsers && (
+                        <NavLink
+                            icon={<UserGroupIcon />}
+                            label="Users"
+                            isActive={activeTab === Tab.Users}
+                            onClick={() => handleLinkClick(Tab.Users)}
+                        />
+                    )}
                 </nav>
             </aside>
         </>

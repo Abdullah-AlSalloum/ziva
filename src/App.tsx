@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo, FC, useRef } from 'react';
 import { InventoryItem, User, OrderRequest, Tab, Task, DailyOrder, TaskStatus, Laboratory, Backorder, OrderItem } from '../types';
 import { LocalDatabase, LocalFieldValue } from '../localDatabase';
+import { createLocalAuthService } from '../authService';
+import { CognitoAuthService } from '../cognitoAuthService';
+import { configureCognito } from '../cognitoConfig';
+import { clearStoredUserId, getStoredUserId, storeUserId } from '../authSession';
 import Header from '../components/Header';
 import DashboardSection from '../components/DashboardSection';
 import InventorySection from '../components/InventorySection';
@@ -10,19 +14,20 @@ import TaskSection from '../components/TaskSection';
 import DailyOrdersSection from '../components/DailyOrdersSection';
 import CustomerSection from '../components/CustomerSection';
 import BackorderSection from '../components/BackorderSection';
+import UserManagementSection from '../components/UserManagementSection';
 import Avatar from '../components/Avatar';
 import Sidebar from '../components/Sidebar';
 import { NotificationContainer } from '../components/Notification';
 import { PlusIcon, ArchiveBoxIcon, ListBulletIcon, InformationCircleIcon, XMarkIcon, ClipboardDocumentCheckIcon, TruckIcon, BellIcon, HomeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '../components/icons';
 
 const initialUsersList: Omit<User, 'id'>[] = [
-  { name: 'Mohammad', description: 'Owner', password: 'password123', hasSetPassword: false },
-  { name: 'Osama', description: ' Manager', password: 'password123', hasSetPassword: false },
-  { name: 'Shadi', description: 'Sales Manager', password: 'password123', hasSetPassword: false },
-  { name: 'Anas', description: 'Tecnical Servis', password: 'password123', hasSetPassword: false },
-  { name: 'Abdulselam', description: 'Accountent', password: 'password123', hasSetPassword: false },
-  { name: 'Abdulkarim', description: 'Sales Lead', password: 'password123', hasSetPassword: false },
-  { name: 'Abdullah', description: 'Computer Engineer', password: 'password123', hasSetPassword: false },
+  { name: 'Mohammad', username: 'mohammad', description: 'Owner', role: 'Owner', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Osama', username: 'osama', description: 'Manager', role: 'Manager', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Shadi', username: 'shadi', description: 'Sales Manager', role: 'Sales Manager', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Anas', username: 'anas', description: 'Technical Service', role: 'Technical Service', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Abdulselam', username: 'abdulselam', description: 'Accountant', role: 'Accountant', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Abdulkarim', username: 'abdulkarim', email: 'zivadental008@gmail.com', description: 'Sales Lead', role: 'Sales Lead', status: 'active', password: 'password123', hasSetPassword: false },
+  { name: 'Abdullah', username: 'abdullah', description: 'Computer Engineer', role: 'Computer Engineer', status: 'active', password: 'password123', hasSetPassword: false },
 ];
 
 const playSound = (type: 'confirmation' | 'notification') => {
@@ -59,7 +64,25 @@ const LoadingScreen: FC<{ message: string }> = ({ message }) => (
 );
 
 
-const UserSelectionPage: FC<{ users: User[]; onSelectUser: (user: User) => void; }> = ({ users, onSelectUser }) => (
+const LoginPage: FC<{ users: User[]; onLogin: (username: string, password: string) => void; error?: string; }> = ({ users, onLogin, error: externalError }) => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        setError('');
+
+        if (!password) {
+            setError('Enter your password to continue.');
+            return;
+        }
+
+        onLogin(username.trim(), password);
+    };
+
+    return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center p-4 transition-colors duration-300">
       <div className="w-full max-w-md mx-auto">
         <div className="text-center mb-8">
@@ -71,21 +94,63 @@ const UserSelectionPage: FC<{ users: User[]; onSelectUser: (user: User) => void;
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 sm:p-8">
-            <h2 className="text-center text-xl font-semibold text-gray-800 dark:text-gray-200">Who's signing in?</h2>
-            <p className="text-center text-gray-500 dark:text-gray-400 mt-1 mb-6">Please select your profile to continue.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {users.map(user => (
-                <button key={user.id} onClick={() => onSelectUser(user)} className="flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg shadow-sm hover:shadow-lg hover:-translate-y-1 transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-gray-800 focus:ring-indigo-500">
-                <Avatar name={user.name} size="large" />
-                <span className="mt-2 font-medium text-sm text-gray-800 dark:text-gray-200 text-center">{user.name}</span>
-                <span className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">{user.description}</span>
+            <h2 className="text-center text-xl font-semibold text-gray-800 dark:text-gray-200">Sign in to your account</h2>
+            <p className="text-center text-gray-500 dark:text-gray-400 mt-1 mb-6">Use your assigned username and password.</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username or email</label>
+                    <input
+                        id="login-username"
+                        type="text"
+                        autoComplete="username"
+                        autoFocus
+                        required
+                        value={username}
+                        onChange={event => setUsername(event.target.value)}
+                        className="mt-1 block w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <div className="relative mt-1">
+                        <input
+                            id="login-password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            required
+                            value={password}
+                            onChange={event => setPassword(event.target.value)}
+                            className="block w-full pr-10 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(previous => !previous)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 rounded-r-md"
+                        >
+                            {showPassword
+                                ? <EyeSlashIcon className="h-5 w-5" />
+                                : <EyeIcon className="h-5 w-5" />}
+                        </button>
+                    </div>
+                </div>
+                {(error || externalError) && (
+                    <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+                        <svg className="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.04 14A2 2 0 004 21h16a2 2 0 001.75-3.14l-8.04-14a2 2 0 00-3.42 0z" />
+                        </svg>
+                        <span>{error || externalError}</span>
+                    </div>
+                )}
+                <button type="submit" className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sign in
                 </button>
-            ))}
-            </div>
+            </form>
         </div>
       </div>
     </div>
-);
+    );
+};
 
 const AuthModal: FC<{
     selectedUser: User;
@@ -216,6 +281,10 @@ const PasswordModal: FC<{
 
 const App: React.FC = () => {
   const [db] = useState(() => new LocalDatabase());
+  const [authService] = useState(() => {
+    const hasCognitoConfig = configureCognito();
+    return hasCognitoConfig ? new CognitoAuthService() : createLocalAuthService();
+  });
   const [users, setUsers] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
@@ -227,6 +296,7 @@ const App: React.FC = () => {
 
   const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null);
   const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null);
+  const [loginError, setLoginError] = useState('');
   
   const [isSettingFirstPassword, setIsSettingFirstPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -238,7 +308,8 @@ const App: React.FC = () => {
   useEffect(() => {
     // --- Seeding Logic ---
     const seedDatabase = () => {
-        const hasUsers = Object.keys(db.getCollection('users')).length > 0;
+        const existingUsers = db.getCollection('users');
+        const hasUsers = Object.keys(existingUsers).length > 0;
         if (!hasUsers) {
             console.log("Seeding database: creating initial users and inventory...");
             const batch = db.batch();
@@ -261,7 +332,21 @@ const App: React.FC = () => {
             });
             void batch.commit();
             console.log("Database seeded successfully.");
+            return;
         }
+
+        Object.entries(existingUsers).forEach(([id, existingUser]) => {
+            const mockUser = initialUsersList.find(user =>
+                user.name.toLowerCase() === String(existingUser.name || '').toLowerCase()
+            );
+            const updates = {
+                username: existingUser.username || mockUser?.username || String(existingUser.name || '').toLowerCase().replace(/\s+/g, '.'),
+                ...(existingUser.email || !mockUser?.email ? {} : { email: mockUser.email }),
+                role: existingUser.role || mockUser?.role || existingUser.description,
+                status: existingUser.status || 'active',
+            };
+            db.collection('users').doc(id).update(updates);
+        });
     };
     seedDatabase();
 
@@ -282,6 +367,28 @@ const App: React.FC = () => {
     ];
     return () => unsubscribers.forEach(unsub => unsub());
   }, [db]);
+
+  useEffect(() => {
+    if (authenticatedUser || users.length === 0) return;
+
+    if (authService.restoreSession) {
+        void authService.restoreSession(users).then(user => {
+            if (user && user.status !== 'disabled') {
+                setAuthenticatedUser(user);
+            }
+        });
+        return;
+    }
+
+    const storedUserId = getStoredUserId();
+    const storedUser = users.find(user => user.id === storedUserId);
+
+    if (storedUser && storedUser.status !== 'disabled') {
+        setAuthenticatedUser(storedUser);
+    } else if (storedUserId) {
+        clearStoredUserId();
+    }
+  }, [authenticatedUser, users]);
   
    useEffect(() => {
     if (authenticatedUser && notifications[authenticatedUser.id]) {
@@ -297,25 +404,48 @@ const App: React.FC = () => {
   }, [authenticatedUser, notifications, db]);
   
   // --- Auth Handlers ---
-  const handleLogin = (password: string) => {
-    if (!selectedUserForLogin) return;
-    if (selectedUserForLogin.password === password) {
-        if (!selectedUserForLogin.hasSetPassword) {
+  const handleLogin = async (username: string, password: string) => {
+    setLoginError('');
+    const result = await authService.authenticate(username, password, users);
+    if (!result.success) {
+        if (result.error === 'password-change-required') {
+            setSelectedUserForLogin(result.user);
             setIsSettingFirstPassword(true);
-        } else {
-            setAuthenticatedUser(selectedUserForLogin);
-            setSelectedUserForLogin(null);
+            return;
         }
+        setLoginError(result.error === 'disabled-account'
+            ? 'This account is disabled. Please contact an administrator.'
+            : result.detail
+                ? result.detail === 'NotAuthorizedException'
+                    ? 'Cognito rejected the sign-in. Verify that this user belongs to the configured user pool and enter the temporary password exactly, including any symbols. If it still fails, reset the user password in Cognito.'
+                    : `Cognito rejected the sign-in (${result.detail}). Check the configured user pool, username, and password.`
+                : 'Incorrect username or password.');
+        return;
+    }
+    const user = result.user;
+    setSelectedUserForLogin(user);
+    if (!user.hasSetPassword) {
+        setIsSettingFirstPassword(true);
     } else {
-        alert('Incorrect password. Please try again.');
+        setAuthenticatedUser(user);
+        storeUserId(user.id);
+        setSelectedUserForLogin(null);
     }
   };
   
-  const handleSetFirstPassword = ({ newPassword }: Record<string, string>) => {
+  const handleSetFirstPassword = async ({ newPassword }: Record<string, string>) => {
     if (!db || !selectedUserForLogin) return;
+    if (authService.completePasswordChange) {
+        const result = await authService.completePasswordChange(newPassword);
+        if (!result.success) {
+            alert('The new password could not be saved. Please try again.');
+            return;
+        }
+    }
     const updatedUser = { ...selectedUserForLogin, password: newPassword, hasSetPassword: true };
     db.collection('users').doc(updatedUser.id).update({ password: newPassword, hasSetPassword: true });
     setAuthenticatedUser(updatedUser);
+    storeUserId(updatedUser.id);
     setIsSettingFirstPassword(false);
     setSelectedUserForLogin(null);
   };
@@ -332,7 +462,10 @@ const App: React.FC = () => {
     }
   };
   
-  const handleLogout = () => setAuthenticatedUser(null);
+  const handleLogout = () => {
+    clearStoredUserId();
+    setAuthenticatedUser(null);
+  };
   
   // --- Data Handlers ---
   const handleAddItem = (newItem: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>) => {
@@ -417,10 +550,22 @@ const App: React.FC = () => {
     }
   };
   const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
-     db?.collection('tasks').doc(taskId).update({ status });
+     const task = tasks.find(existingTask => existingTask.id === taskId);
+     if (!task || !authenticatedUser) return;
+     const canManageTask = authenticatedUser.role === 'Owner'
+        || task.assignedTo === authenticatedUser.id
+        || task.createdBy === authenticatedUser.id;
+     if (canManageTask) {
+         db.collection('tasks').doc(taskId).update({ status });
+     }
   };
   const handleRemoveTask = async (taskId: string) => {
-    if (!db) return;
+    const task = tasks.find(existingTask => existingTask.id === taskId);
+    if (!task || !authenticatedUser) return;
+    const canManageTask = authenticatedUser.role === 'Owner'
+        || task.assignedTo === authenticatedUser.id
+        || task.createdBy === authenticatedUser.id;
+    if (!canManageTask) return;
     try {
         await db.collection('tasks').doc(taskId).delete();
     } catch (error) {
@@ -545,6 +690,30 @@ const App: React.FC = () => {
         alert("An error occurred while trying to remove the backorder. Please try again.");
     }
   };
+  const handleAddUser = (user: Omit<User, 'id' | 'hasSetPassword'>) => {
+    if (authenticatedUser?.role !== 'Owner') return;
+    if (users.some(existingUser => (existingUser.username || existingUser.name).toLowerCase() === user.username.toLowerCase())) {
+        alert('That username is already in use.');
+        return;
+    }
+    db.collection('users').add({ ...user, hasSetPassword: false });
+  };
+  const handleUpdateUser = (userId: string, updates: Partial<User>) => {
+    if (authenticatedUser?.role !== 'Owner') return;
+    db.collection('users').doc(userId).update(updates);
+  };
+  const handleResetPassword = (userId: string) => {
+    if (authenticatedUser?.role !== 'Owner') return;
+    db.collection('users').doc(userId).update({ password: 'password123', hasSetPassword: false });
+  };
+  const handleToggleUserStatus = (user: User) => {
+    if (authenticatedUser?.role !== 'Owner') return;
+    if (user.id === authenticatedUser.id) {
+        alert('You cannot disable your own account.');
+        return;
+    }
+    db.collection('users').doc(user.id).update({ status: user.status === 'disabled' ? 'active' : 'disabled' });
+  };
    const handleRemoveNotification = (id: number) => {
     setActiveNotifications(prev => prev.filter(n => n.id !== id));
   };
@@ -555,7 +724,7 @@ const App: React.FC = () => {
     return (
         <>
             {users.length > 0 ? (
-                <UserSelectionPage users={users} onSelectUser={setSelectedUserForLogin} />
+                <LoginPage users={users} onLogin={handleLogin} error={loginError} />
             ) : (
                 <LoadingScreen message="Loading user profiles..." />
             )}
@@ -580,18 +749,22 @@ const App: React.FC = () => {
   
   const reorderItems = inventory.filter(item => item.quantity < 3);
   const stockItems = inventory.filter(item => item.quantity >= 3);
+  const visibleTasks = authenticatedUser.role === 'Owner'
+    ? tasks
+    : tasks.filter(task => task.assignedTo === authenticatedUser.id || task.createdBy === authenticatedUser.id);
 
   const renderContent = () => {
     switch (activeTab) {
-      case Tab.Dashboard: return <DashboardSection currentUser={authenticatedUser} users={users} inventory={inventory} tasks={tasks} dailyOrders={dailyOrders} orderRequests={orderRequests} onTabChange={setActiveTab} />;
+      case Tab.Dashboard: return <DashboardSection currentUser={authenticatedUser} users={users} inventory={inventory} tasks={visibleTasks} dailyOrders={dailyOrders} orderRequests={orderRequests} onTabChange={setActiveTab} />;
       case Tab.Inventory: return <InventorySection items={stockItems} onUpdateQuantity={(id, qty) => handleUpdateItem(id, { quantity: qty })} onAddItem={handleAddItem} onImportItems={handleImportItems} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} users={users} />;
       case Tab.Reorder: return <ReorderSection items={reorderItems} users={users} onRestock={handleRestock} onAddItem={handleAddItem} onRemoveItem={handleRemoveItem} onUpdateItem={handleUpdateItem} />;
       case Tab.OrderRequests: return <OrderRequestSection items={orderRequests} users={users} inventory={inventory} onAddItem={handleAddOrderRequest} onRemoveItem={handleRemoveOrderRequest} onMoveToBackorder={handleMoveToBackorder} />;
-      case Tab.Tasks: return <TaskSection tasks={tasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
+      case Tab.Tasks: return <TaskSection tasks={visibleTasks} users={users} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} onUpdateTaskStatus={handleUpdateTaskStatus} />;
       // FIX: Corrected function name from handleRemoveOrder to handleRemoveDailyOrder.
       case Tab.DailyOrders: return <DailyOrdersSection orders={dailyOrders} onAddOrder={handleAddDailyOrder} onRemoveOrder={handleRemoveDailyOrder} />;
       case Tab.Laboratories: return <CustomerSection laboratories={laboratories} onAddLaboratory={handleAddLaboratory} onRemoveLaboratory={handleRemoveLaboratory} />;
       case Tab.Backorder: return <BackorderSection backorders={backorders} users={users} onRemoveBackorder={handleRemoveBackorder} />;
+      case Tab.Users: return <UserManagementSection users={users} onAddUser={handleAddUser} onUpdateUser={handleUpdateUser} onResetPassword={handleResetPassword} onToggleStatus={handleToggleUserStatus} />;
       default: return null;
     }
   };
@@ -613,10 +786,11 @@ const App: React.FC = () => {
                 stockItemsCount={stockItems.length}
                 reorderItemsCount={reorderItems.length}
                 orderRequestsCount={orderRequests.length}
-                tasksCount={tasks.length}
+                tasksCount={visibleTasks.length}
                 dailyOrdersCount={dailyOrders.length}
                 laboratoriesCount={laboratories.length}
                 backordersCount={backorders.length}
+                canManageUsers={authenticatedUser.role === 'Owner'}
                 isOpen={isSidebarOpen}
                 setIsOpen={setIsSidebarOpen}
             />

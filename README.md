@@ -21,10 +21,50 @@ Invictus Manager is a comprehensive, responsive inventory management system desi
     - A section to log daily orders that have been sent to customers.
     - A section to log pending requests for out-of-stock items.
 - **Data Persistence**: All application data (inventory, users, tasks, etc.) is saved directly in the browser's local storage, so your information is still there even after closing the tab or restarting the computer.
+- **Development login accounts**: Until AWS authentication is connected, use one of the seeded usernames (`mohammad`, `osama`, `shadi`, `anas`, `abdulselam`, `abdulkarim`, or `abdullah`) with the temporary password `password123`. These credentials are for local development only.
+- **Development sessions**: The temporary local implementation remembers the authenticated user ID across refreshes. AWS authentication should replace this before production.
+- **Production authentication**: Set `VITE_AWS_REGION`, `VITE_COGNITO_USER_POOL_ID`, and `VITE_COGNITO_USER_POOL_CLIENT_ID` from a Cognito public app client to activate Cognito login. Do not configure a client secret in this browser app.
 - **UI & UX**:
     - A clean, modern interface with **Dark Mode**.
     - Fully responsive design for use on desktops, tablets, and mobile devices.
     - Confirmation dialogs for critical actions to prevent mistakes.
+
+## Authentication
+
+The app now uses a username/password login flow for multiple users.
+
+### Local development
+
+When Cognito variables are not configured, the app uses the temporary local authentication adapter and localStorage database:
+
+- Usernames: `mohammad`, `osama`, `shadi`, `anas`, `abdulselam`, `abdulkarim`, `abdullah`
+- Temporary password: `password123`
+- Owner accounts can manage users from the **Users** screen.
+- User sessions restore across refreshes and are cleared on logout.
+
+These credentials and localStorage authentication are for development only.
+
+### AWS Cognito
+
+For production authentication:
+
+1. Create a Cognito User Pool.
+2. Create a public app client without a client secret.
+3. Configure the values directly in your local `.env` file:
+
+```env
+VITE_AWS_REGION=your-aws-region
+VITE_COGNITO_USER_POOL_ID=your-user-pool-id
+VITE_COGNITO_USER_POOL_CLIENT_ID=your-public-app-client-id
+```
+
+When all three values are present, the app uses Cognito for sign-in and session restoration. Do not commit `.env` or add a client secret to this browser application. User profile and operational records will still use the temporary local adapter until the AWS data API is connected.
+
+Run the authentication tests with:
+
+```bash
+npm test
+```
 
 ---
 

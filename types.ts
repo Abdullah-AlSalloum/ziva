@@ -1,7 +1,15 @@
+export type UserRole = 'Owner' | 'Manager' | 'Sales Manager' | 'Technical Service' | 'Accountant' | 'Sales Lead' | 'Computer Engineer';
+export type UserStatus = 'active' | 'disabled';
+
 export interface User {
   id: string;
   name: string;
+  username: string;
   description: string;
+  role: UserRole;
+  status: UserStatus;
+  email?: string;
+  // Temporary local-development credential; replace with Cognito-backed auth before production.
   password: string;
   hasSetPassword: boolean;
 }
@@ -79,4 +87,5 @@ export enum Tab {
   DailyOrders = 'DAILY_ORDERS',
   Laboratories = 'LABORATORIES',
   Backorder = 'BACKORDER',
+  Users = 'USERS',
 }
