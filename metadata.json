@@ -1,0 +1,5 @@
+{
+  "name": "Invictus Manager",
+  "description": "A responsive inventory management system designed for a small team. It helps track inventory, flags items that need reordering, and keeps a wishlist of customer requests for out-of-stock items.",
+  "requestFramePermissions": []
+}
