@@ -21,10 +21,15 @@ const App: React.FC = () => {
     return (
       <>
         <NetworkStatus />
-        {!controller.isDataReady ? (
+        {controller.isLocalDevelopment && !controller.isDataReady ? (
           <LoadingScreen message={translations[getStoredLanguage()]['status.loadingUsers']} />
         ) : (
-          <LoginPage users={controller.users} onLogin={controller.handleLogin} error={controller.loginError} />
+          <LoginPage
+            users={controller.users}
+            onLogin={controller.handleLogin}
+            isLocalDevelopment={controller.isLocalDevelopment}
+            error={controller.loginError}
+          />
         )}
         {controller.selectedUserForLogin && !controller.isSettingFirstPassword && (
           <AuthModal

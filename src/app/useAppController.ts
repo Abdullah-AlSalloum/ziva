@@ -68,6 +68,8 @@ export const useAppController = () => {
   
   useEffect(() => {
     // --- Real-time Listeners ---
+    loadedCollections.current.clear();
+    setIsDataReady(false);
     const markCollectionLoaded = (collection: string) => {
         loadedCollections.current.add(collection);
         if (loadedCollections.current.size === 8) {
@@ -90,7 +92,7 @@ export const useAppController = () => {
         }),
     ];
     return () => unsubscribers.forEach(unsub => unsub());
-  }, [db]);
+  }, [authenticatedUser, db]);
 
   useEffect(() => {
     if (authenticatedUser || users.length === 0) return;
