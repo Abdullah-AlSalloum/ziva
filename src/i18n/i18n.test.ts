@@ -9,8 +9,8 @@ import {
 } from './i18n';
 
 describe('localization foundation', () => {
-  it('supports English and Arabic with English as the default', () => {
-    expect(DEFAULT_LANGUAGE).toBe('en');
+  it('supports English and Arabic with Arabic as the default', () => {
+    expect(DEFAULT_LANGUAGE).toBe('ar');
     expect(isSupportedLanguage('en')).toBe(true);
     expect(isSupportedLanguage('ar')).toBe(true);
     expect(isSupportedLanguage('fr')).toBe(false);
@@ -21,14 +21,14 @@ describe('localization foundation', () => {
     expect(getLanguageDirection('en')).toBe('ltr');
   });
 
-  it('falls back to English and then to the key', () => {
+  it('falls back to Arabic and then to the key', () => {
     const translate = createTranslator({
       en: { greeting: 'Hello', shared: 'English value' },
       ar: { greeting: 'مرحبا' },
     }, 'ar');
 
     expect(translate('greeting')).toBe('مرحبا');
-    expect(translate('shared')).toBe('English value');
+    expect(translate('shared')).toBe('shared');
     expect(translate('missing')).toBe('missing');
   });
 

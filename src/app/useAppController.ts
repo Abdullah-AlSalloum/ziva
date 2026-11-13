@@ -28,11 +28,13 @@ const playSound = (type: 'confirmation' | 'notification') => {
 
 export const useAppController = () => {
   const { language, direction, t } = useTranslation(translations);
-  const [db] = useState<Database>(() => createDatabase());
-  const [authService] = useState<AuthService | null>(() => configureCognito()
-    ? new CognitoAuthService()
-    : import.meta.env.DEV ? new LocalAuthService() : null);
   const isLocalDevelopment = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL;
+  const [db] = useState<Database>(() => createDatabase());
+  const [authService] = useState<AuthService | null>(() => isLocalDevelopment
+    ? new LocalAuthService()
+    : configureCognito()
+      ? new CognitoAuthService()
+      : null);
   const [users, setUsers] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
@@ -160,12 +162,30 @@ export const useAppController = () => {
             setIsSettingFirstPassword(true);
             return;
         }
+        if (result.error === 'profile-not-found') {
+            try {
+                const snapshot = await db.collection('users').get();
+                const profiles = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+                const authenticatedProfile = authService.restoreSession
+                    ? await authService.restoreSession(profiles)
+                    : null;
+                if (authenticatedProfile && authenticatedProfile.status !== 'disabled') {
+                    setAuthenticatedUser(authenticatedProfile);
+                    storeUserId(authenticatedProfile.id);
+                    return;
+                }
+            } catch (error) {
+                console.error('Unable to load the authenticated user profile:', error);
+            }
+            setLoginError(t('errors.profileNotFound'));
+            return;
+        }
         setLoginError(result.error === 'disabled-account'
             ? t('errors.disabledAccount')
             : result.detail
                 ? result.detail === 'NotAuthorizedException'
                     ? t('errors.cognitoSignIn')
-                    : `${t('errors.cognitoSignIn')} (${result.detail})`
+                    : t('errors.incorrectCredentials')
                 : t('errors.incorrectCredentials'));
         return;
     }
@@ -184,15 +204,30 @@ export const useAppController = () => {
     if (!selectedUserForLogin || !authService?.completePasswordChange) return;
     if (authService.completePasswordChange) {
         const result = await authService.completePasswordChange(newPassword);
-        if (!result.success) {
-            notify(t('errors.passwordSave'), 'error');
+        if (result.success === false) {
+            if (result.error === 'password-session-expired') {
+                notify(t('errors.passwordSessionExpired'), 'error');
+                setIsSettingFirstPassword(false);
+                setSelectedUserForLogin(null);
+            } else {
+                notify(t('errors.passwordSave'), 'error');
+            }
             return;
         }
     }
-    const updatedUser = { ...selectedUserForLogin, hasSetPassword: true };
-    db.collection('users').doc(updatedUser.id).update({ hasSetPassword: true });
-    setAuthenticatedUser(updatedUser);
-    storeUserId(updatedUser.id);
+    const snapshot = await db.collection('users').get();
+    const profiles = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+    const updatedUser = authService.restoreSession
+      ? await authService.restoreSession(profiles)
+      : null;
+    if (!updatedUser || updatedUser.status === 'disabled') {
+        notify(t('errors.profileNotFound'), 'error');
+        return;
+    }
+    await db.collection('users').doc(updatedUser.id).update({ hasSetPassword: true });
+    const authenticatedUser = { ...updatedUser, hasSetPassword: true };
+    setAuthenticatedUser(authenticatedUser);
+    storeUserId(authenticatedUser.id);
     setIsSettingFirstPassword(false);
     setSelectedUserForLogin(null);
   };

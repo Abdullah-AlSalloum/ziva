@@ -54,7 +54,24 @@ export class CognitoAuthService implements AuthService {
         || (currentUser && (candidate.username || candidate.name).toLowerCase() === currentUser.username.toLowerCase())
       );
 
-      if (!user || user.status === 'disabled') {
+      if (!user && !result.isSignedIn && result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        this.pendingUser = {
+          id: currentUser?.userId ?? trimmedIdentifier,
+          name: currentUser?.username ?? trimmedIdentifier,
+          username: currentUser?.username ?? trimmedIdentifier,
+          description: '',
+          role: 'Owner',
+          status: 'active',
+          hasSetPassword: false,
+        };
+        return { success: false, error: 'password-change-required', user: this.pendingUser };
+      }
+
+      if (!user) {
+        return { success: false, error: 'profile-not-found' };
+      }
+
+      if (user.status === 'disabled') {
         return { success: false, error: user?.status === 'disabled' ? 'disabled-account' : 'invalid-credentials' };
       }
 
@@ -87,6 +104,10 @@ export class CognitoAuthService implements AuthService {
       return { success: true, user };
     } catch (error) {
       console.error('Cognito password change failed:', error);
+      if (error instanceof Error && error.name === 'SignInException') {
+        this.pendingUser = null;
+        return { success: false, error: 'password-session-expired' };
+      }
       const detail = error instanceof Error ? error.name : 'UnknownCognitoError';
       return { success: false, error: 'invalid-credentials', detail };
     }

@@ -2,7 +2,7 @@ import { User } from '../../types';
 
 export type AuthenticationResult =
   | { success: true; user: User }
-  | { success: false; error: 'invalid-credentials' | 'disabled-account'; detail?: string }
+  | { success: false; error: 'invalid-credentials' | 'disabled-account' | 'profile-not-found' | 'password-session-expired'; detail?: string }
   | { success: false; error: 'password-change-required'; user: User };
 
 export interface AuthService {

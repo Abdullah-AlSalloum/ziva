@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export type Language = 'en' | 'ar';
 
-export const DEFAULT_LANGUAGE: Language = 'en';
+export const DEFAULT_LANGUAGE: Language = 'ar';
 export const SUPPORTED_LANGUAGES: readonly Language[] = ['en', 'ar'];
 export const LANGUAGE_STORAGE_KEY = 'invictus-manager-language';
 const LANGUAGE_CHANGE_EVENT = 'invictus-manager-language-change';
