@@ -28,6 +28,10 @@ html[lang="ar"] textarea {
   font-family: "Noto Kufi Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 
+.arabic-auth {
+  font-family: "Noto Kufi Arabic", ui-sans-serif, system-ui, sans-serif;
+}
+
 button:not(:disabled),
 a[href],
 select:not(:disabled),

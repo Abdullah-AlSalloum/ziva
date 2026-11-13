@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import { User } from '../types';
 import Avatar from '../components/Avatar';
 import { EyeIcon, EyeSlashIcon, LockClosedIcon } from '../components/icons';
-import { useTranslation } from '../i18n/i18n';
+import { createTranslator, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 
 export const LoadingScreen: FC<{ message: string; variant?: 'default' | 'workspace' }> = ({ message, variant = 'default' }) => {
@@ -54,11 +54,15 @@ export const LoadingScreen: FC<{ message: string; variant?: 'default' | 'workspa
 export const LoginPage: FC<{
   users: User[];
   onLogin: (username: string, password: string) => void;
+  onRegister?: (user: Omit<User, 'id' | 'hasSetPassword'>, password: string) => void;
+  isLocalDevelopment?: boolean;
   error?: string;
-}> = ({ onLogin, error: externalError }) => {
-  const { t } = useTranslation(translations);
+}> = ({ users, onLogin, onRegister, isLocalDevelopment = false, error: externalError }) => {
+  const t = createTranslator(translations, 'ar');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
@@ -72,37 +76,85 @@ export const LoginPage: FC<{
     onLogin(username.trim(), password);
   };
 
+  const handleRegister = (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (!name.trim() || !username.trim() || !email.trim() || !password) {
+      setError(t('auth.completeAllFields'));
+      return;
+    }
+    onRegister?.({
+      name: name.trim(),
+      username: username.trim().toLowerCase(),
+      description: 'Owner',
+      role: 'Owner',
+      status: 'active',
+      email: email.trim(),
+    }, password);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-4 transition-colors duration-300">
-      <div className="w-full max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-2">
-            <svg className="h-10 w-10 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div dir="rtl" lang="ar" className="arabic-auth relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-8 transition-colors duration-300 dark:bg-slate-950 sm:px-6">
+      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-indigo-200/35 blur-3xl dark:bg-indigo-500/10" />
+      <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-violet-200/30 blur-3xl dark:bg-violet-500/10" />
+      <div className="relative w-full max-w-md">
+        <div className="mb-7 text-center sm:mb-8">
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-1 ring-indigo-500/20 dark:bg-indigo-500">
+              <svg className="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
-            </svg>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t('app.name')}</h1>
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-4xl">{t('app.name')}</h1>
           </div>
         </div>
-        <div className="app-card bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8">
-          <h2 className="text-center text-xl font-semibold text-gray-800 dark:text-gray-200">{t('auth.signInTitle')}</h2>
-          <p className="text-center text-gray-500 dark:text-gray-400 mt-1 mb-6">{t('auth.signInSubtitle')}</p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="app-card rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.45)] backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 sm:p-9">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+              {isLocalDevelopment && users.length === 0 ? t('auth.localSetupTitle') : t('auth.signInTitle')}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+              {isLocalDevelopment && users.length === 0 ? t('auth.localSetupSubtitle') : t('auth.signInSubtitle')}
+            </p>
+          </div>
+          {isLocalDevelopment && users.length === 0 ? (
+            <form onSubmit={handleRegister} className="space-y-5">
+              <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {t('userManagement.fullName')}
+                <input required autoFocus value={name} onChange={event => setName(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+              </label>
+              <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {t('auth.usernameOrEmail')}
+                <input required dir="ltr" value={username} onChange={event => setUsername(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+              </label>
+              <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {t('userManagement.email')}
+                <input required type="email" dir="ltr" value={email} onChange={event => setEmail(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+              </label>
+              <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {t('auth.password')}
+                <input required type="password" dir="ltr" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+              </label>
+              {(error || externalError) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-right text-sm font-medium leading-6 text-red-700">{error || externalError}</p>}
+              <button type="submit" className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t('auth.createLocalUser')}</button>
+            </form>
+          ) : <form onSubmit={handleSubmit} className="space-y-5">
+            <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t('auth.usernameOrEmail')}
-              <input required autoFocus autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} className="mt-1 block w-full bg-slate-50 dark:bg-slate-700/70 border-gray-300 dark:border-gray-600 rounded-lg" />
+              <input required autoFocus autoComplete="username" dir="ltr" value={username} onChange={event => setUsername(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600" />
             </label>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
               {t('auth.password')}
               <div className="relative mt-1">
-                <input required type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} className="block w-full pr-10 bg-slate-50 dark:bg-slate-700/70 border-gray-300 dark:border-gray-600 rounded-lg" />
-                <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute inset-y-0 right-0 px-3 text-gray-400">
+                <input required type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-left text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600" />
+                <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute inset-y-0 left-0 flex w-11 items-center justify-center text-slate-400 transition-colors hover:text-indigo-600 dark:hover:text-indigo-300">
                   {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                 </button>
               </div>
             </label>
-            {(error || externalError) && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{error || externalError}</p>}
-            <button type="submit" className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{t('auth.signIn')}</button>
-          </form>
+            {(error || externalError) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-right text-sm font-medium leading-6 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">{error || externalError}</p>}
+            <button type="submit" className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-indigo-600/30 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 active:translate-y-0 dark:bg-indigo-500 dark:hover:bg-indigo-400">{t('auth.signIn')}</button>
+          </form>}
         </div>
       </div>
     </div>
@@ -114,7 +166,7 @@ export const AuthModal: FC<{
   onLogin: (password: string) => void;
   onClose: () => void;
 }> = ({ selectedUser, onLogin, onClose }) => {
-  const { t } = useTranslation(translations);
+  const t = createTranslator(translations, 'ar');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -137,7 +189,7 @@ export const AuthModal: FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
+    <div dir="rtl" lang="ar" className="arabic-auth fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-800 dark:ring-white/10 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div className="flex flex-col items-center mb-6">
           <Avatar name={selectedUser.name} size="large" />
@@ -146,9 +198,9 @@ export const AuthModal: FC<{
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
-            <LockClosedIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <LockClosedIcon className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
             <input required type={showPassword ? 'text' : 'password'} autoFocus value={password} onChange={event => setPassword(event.target.value)} className="block w-full pl-10 pr-10 py-2 rounded-md dark:bg-gray-700 dark:text-white" placeholder={t('auth.password')} />
-            <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute right-3 top-2.5 text-gray-400">
+            <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute left-3 top-2.5 text-gray-400">
               {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
           </div>
@@ -166,7 +218,7 @@ export const PasswordModal: FC<{
   onClose: () => void;
   isFirstTimeSetup?: boolean;
 }> = ({ onSave, onClose, isFirstTimeSetup = false }) => {
-  const { t } = useTranslation(translations);
+  const t = createTranslator(translations, 'ar');
   const translatedTitle = isFirstTimeSetup ? t('auth.setNewPassword') : t('auth.changePassword');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -197,7 +249,7 @@ export const PasswordModal: FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
+    <div dir="rtl" lang="ar" className="arabic-auth fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
       <div className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-800 dark:ring-white/10" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
         <form onSubmit={handleSubmit}>
           <div className="p-6 sm:p-8">

@@ -76,6 +76,16 @@ export interface Backorder {
   createdAt: string; // ISO String
 }
 
+export interface AuditEvent {
+  id: string;
+  action: string;
+  targetEntityType: string;
+  targetEntityId: string;
+  actorId: string;
+  actorRole: UserRole;
+  createdAt: string;
+}
+
 export enum Tab {
   Dashboard = 'DASHBOARD',
   Inventory = 'INVENTORY',
@@ -86,4 +96,5 @@ export enum Tab {
   Laboratories = 'LABORATORIES',
   Backorder = 'BACKORDER',
   Users = 'USERS',
+  Audit = 'AUDIT',
 }

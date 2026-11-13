@@ -15,6 +15,7 @@ interface SidebarProps {
   laboratoriesCount: number;
   backordersCount: number;
   canManageUsers: boolean;
+  canViewAudit: boolean;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
@@ -63,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     laboratoriesCount,
     backordersCount,
     canManageUsers,
+    canViewAudit,
     isOpen,
     setIsOpen
 }) => {
@@ -231,6 +233,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                             direction={direction}
                             isActive={activeTab === Tab.Users}
                             onClick={() => handleLinkClick(Tab.Users)}
+                        />
+                    )}
+                    {canViewAudit && (
+                        <NavLink
+                            icon={<InformationCircleIcon />}
+                            label={t('nav.audit')}
+                            direction={direction}
+                            isActive={activeTab === Tab.Audit}
+                            onClick={() => handleLinkClick(Tab.Audit)}
                         />
                     )}
                 </nav>

@@ -19,14 +19,15 @@ const roleTranslationKeys: Record<UserRole, string> = {
 
 interface UserManagementSectionProps {
   users: User[];
-  onAddUser: (user: Omit<User, 'id' | 'hasSetPassword'>) => void;
+  isLocalDevelopment: boolean;
+  onAddUser: (user: Omit<User, 'id' | 'hasSetPassword'>, password?: string) => void;
   onUpdateUser: (userId: string, updates: Partial<User>) => void;
   onToggleStatus: (user: User) => void;
 }
 
-const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, onAddUser, onUpdateUser, onToggleStatus }) => {
+const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, isLocalDevelopment, onAddUser, onUpdateUser, onToggleStatus }) => {
   const { language, t } = useTranslation(translations);
-  const [form, setForm] = useState({ name: '', username: '', role: 'Manager' as UserRole, email: '' });
+  const [form, setForm] = useState({ name: '', username: '', role: 'Manager' as UserRole, email: '', password: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const activeUsers = users.filter(user => user.status !== 'disabled').length;
@@ -40,7 +41,7 @@ const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, on
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.username.trim()) return;
+    if (!form.name.trim() || !form.username.trim() || !form.email.trim()) return;
 
     onAddUser({
       name: form.name.trim(),
@@ -49,8 +50,8 @@ const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, on
       role: form.role,
       status: 'active',
       email: form.email.trim() || undefined,
-    });
-    setForm({ name: '', username: '', role: 'Manager', email: '' });
+    }, isLocalDevelopment ? form.password : undefined);
+    setForm({ name: '', username: '', role: 'Manager', email: '', password: '' });
   };
 
   return (
@@ -87,14 +88,20 @@ const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, on
             </div>
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('userManagement.email')} <span className="font-normal normal-case">({t('userManagement.optional')})</span></span>
-            <input type="email" placeholder={t('userManagement.emailPlaceholder')} value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('userManagement.email')}</span>
+            <input required type="email" placeholder={t('userManagement.emailPlaceholder')} value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
           </label>
+          {isLocalDevelopment && (
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('auth.password')}</span>
+              <input required type="password" value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
+            </label>
+          )}
           <button type="submit" className="inline-flex items-center justify-center gap-2 self-end rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <PlusIcon className="h-5 w-5" /> {t('userManagement.addUser')}
           </button>
         </form>
-        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">{t('userManagement.cognitoHint')}</p>
+        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">{t(isLocalDevelopment ? 'userManagement.localHint' : 'userManagement.cognitoHint')}</p>
       </div>
 
       <div className="overflow-visible rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80">

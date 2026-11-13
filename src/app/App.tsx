@@ -21,10 +21,10 @@ const App: React.FC = () => {
     return (
       <>
         <NetworkStatus />
-        {controller.users.length > 0 ? (
-          <LoginPage users={controller.users} onLogin={controller.handleLogin} error={controller.loginError} />
-        ) : (
+        {!controller.isDataReady ? (
           <LoadingScreen message={translations[getStoredLanguage()]['status.loadingUsers']} />
+        ) : (
+          <LoginPage users={controller.users} onLogin={controller.handleLogin} error={controller.loginError} />
         )}
         {controller.selectedUserForLogin && !controller.isSettingFirstPassword && (
           <AuthModal
@@ -81,6 +81,7 @@ const App: React.FC = () => {
           laboratoriesCount={controller.laboratories.length}
           backordersCount={controller.backorders.length}
           canManageUsers={currentUser.role === 'Owner'}
+          canViewAudit={currentUser.role === 'Owner' || currentUser.role === 'Manager'}
           isOpen={controller.isSidebarOpen}
           setIsOpen={controller.setIsSidebarOpen}
         />
@@ -89,6 +90,7 @@ const App: React.FC = () => {
             <AppContent
               activeTab={controller.activeTab}
               currentUser={currentUser}
+              isLocalDevelopment={controller.isLocalDevelopment}
               users={controller.users}
               inventory={controller.inventory}
               tasks={controller.tasks}
@@ -96,6 +98,7 @@ const App: React.FC = () => {
               orderRequests={controller.orderRequests}
               laboratories={controller.laboratories}
               backorders={controller.backorders}
+              auditEvents={controller.auditEvents}
               onTabChange={controller.setActiveTab}
               onUpdateQuantity={(id, quantity) => controller.handleUpdateItem(id, { quantity })}
               onAddItem={controller.handleAddItem}

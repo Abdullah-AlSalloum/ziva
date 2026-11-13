@@ -7,9 +7,32 @@ export type QuerySnapshot = {
 };
 export type Listener = (snapshot: QuerySnapshot) => void;
 
+export interface DocumentReference {
+  readonly id: string;
+  update(updates: DocumentData): Promise<void>;
+  delete(): Promise<void>;
+  set(data: DocumentData, options?: { merge?: boolean }): Promise<void>;
+}
+
+export interface CollectionReference {
+  doc(id?: string): DocumentReference;
+  add(data: DocumentData): Promise<DocumentReference>;
+  limit(count: number): CollectionReference;
+  get(): Promise<QuerySnapshot>;
+  onSnapshot(listener: Listener): () => void;
+}
+
+export interface Batch {
+  set(reference: DocumentReference, data: DocumentData): Batch;
+  update(reference: DocumentReference, updates: DocumentData): Batch;
+  delete(reference: DocumentReference): Batch;
+  commit(): Promise<void>;
+}
+
 export interface Database {
-  collection(name: string): LocalCollectionReference;
-  batch(): LocalBatch;
+  readonly isRemote?: boolean;
+  collection(name: string): CollectionReference;
+  batch(): Batch;
   getCollection(name: string): Record<string, DocumentData>;
 }
 

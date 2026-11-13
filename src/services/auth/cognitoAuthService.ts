@@ -1,4 +1,4 @@
-import { confirmSignIn, getCurrentUser, signIn, updatePassword } from 'aws-amplify/auth';
+import { confirmSignIn, getCurrentUser, signIn, signOut, updatePassword } from 'aws-amplify/auth';
 import { AuthService, AuthenticationResult } from './authService';
 import { User } from '../../types';
 
@@ -12,31 +12,36 @@ export class CognitoAuthService implements AuthService {
       try {
         result = await signIn({ username: trimmedIdentifier, password });
       } catch (error) {
-        const mappedUser = users.find(user =>
-          [user.email, user.username, user.name]
-            .filter(Boolean)
-            .some(value => value!.toLowerCase() === trimmedIdentifier.toLowerCase())
-        );
         const errorName = error instanceof Error ? error.name : '';
-        const alternateIdentifiers = mappedUser
-          ? [mappedUser.username, mappedUser.name, mappedUser.email].filter(
-            (value): value is string => Boolean(value) && value !== trimmedIdentifier
-          )
-          : [];
-        if (!['NotAuthorizedException', 'UserNotFoundException'].includes(errorName) || alternateIdentifiers.length === 0) {
-          throw error;
-        }
-        let lastError = error;
-        for (const alternateIdentifier of alternateIdentifiers) {
-          try {
-            result = await signIn({ username: alternateIdentifier, password });
-            break;
-          } catch (alternateError) {
-            lastError = alternateError;
+        if (errorName === 'UserAlreadyAuthenticatedException') {
+          await signOut();
+          result = await signIn({ username: trimmedIdentifier, password });
+        } else {
+          const mappedUser = users.find(user =>
+            [user.email, user.username, user.name]
+              .filter(Boolean)
+              .some(value => value!.toLowerCase() === trimmedIdentifier.toLowerCase())
+          );
+          const alternateIdentifiers = mappedUser
+            ? [mappedUser.username, mappedUser.name, mappedUser.email].filter(
+              (value): value is string => Boolean(value) && value !== trimmedIdentifier
+            )
+            : [];
+          if (!['NotAuthorizedException', 'UserNotFoundException'].includes(errorName) || alternateIdentifiers.length === 0) {
+            throw error;
           }
-        }
-        if (!result) {
-          throw lastError;
+          let lastError = error;
+          for (const alternateIdentifier of alternateIdentifiers) {
+            try {
+              result = await signIn({ username: alternateIdentifier, password });
+              break;
+            } catch (alternateError) {
+              lastError = alternateError;
+            }
+          }
+          if (!result) {
+            throw lastError;
+          }
         }
       }
 

@@ -1,19 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Backorder, DailyOrder, InventoryItem, Laboratory, OrderItem, OrderRequest, Tab, Task, TaskStatus, User } from '../types';
+import { AuditEvent, Backorder, DailyOrder, InventoryItem, Laboratory, OrderItem, OrderRequest, Tab, Task, TaskStatus, User } from '../types';
 import { createDatabase } from '../services/database/createDatabase';
 import { Database, LocalFieldValue } from '../services/database/localDatabase';
 import { AuthService } from '../services/auth/authService';
 import { CognitoAuthService } from '../services/auth/cognitoAuthService';
+import { LocalAuthService } from '../services/auth/localAuthService';
 import { configureCognito } from '../config/cognitoConfig';
 import { clearStoredUserId, getStoredUserId, storeUserId } from '../services/auth/authSession';
 import { getStoredLanguage, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
-
-const initialUsersList: Omit<User, 'id'>[] = [
-  { name: 'Abdullah', username: 'abdullah', description: 'Computer Engineer', role: 'Computer Engineer', status: 'active', hasSetPassword: false },
-  { name: 'Abdulkarim', username: 'abdulkarim', description: 'sales representative', role: 'Manager', status: 'active', hasSetPassword: false },
-  { name: 'Shadi', username: 'Mohammad khalid', description: 'Accountant', role: 'Sales Manager', status: 'active', hasSetPassword: false },
-];
 
 const playSound = (type: 'confirmation' | 'notification') => {
   const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -34,7 +29,10 @@ const playSound = (type: 'confirmation' | 'notification') => {
 export const useAppController = () => {
   const { language, direction, t } = useTranslation(translations);
   const [db] = useState<Database>(() => createDatabase());
-  const [authService] = useState<AuthService | null>(() => configureCognito() ? new CognitoAuthService() : null);
+  const [authService] = useState<AuthService | null>(() => configureCognito()
+    ? new CognitoAuthService()
+    : import.meta.env.DEV ? new LocalAuthService() : null);
+  const isLocalDevelopment = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL;
   const [users, setUsers] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
@@ -42,6 +40,7 @@ export const useAppController = () => {
   const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
   const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [backorders, setBackorders] = useState<Backorder[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [notifications, setNotifications] = useState<Record<string, string[]>>({});
   const [isDataReady, setIsDataReady] = useState(false);
   const loadedCollections = useRef(new Set<string>());
@@ -66,50 +65,6 @@ export const useAppController = () => {
   }, [direction, language]);
   
   useEffect(() => {
-    // --- Seeding Logic ---
-    const seedDatabase = () => {
-        const existingUsers = db.getCollection('users');
-        const hasUsers = Object.keys(existingUsers).length > 0;
-            if (!hasUsers) {
-            console.log("Seeding database: creating initial users and inventory...");
-            const batch = db.batch();
-            const createdUserRefs: { [key: string]: string } = {};
-
-            initialUsersList.forEach(user => {
-                const userRef = db.collection('users').doc();
-                batch.set(userRef, user);
-                createdUserRefs[user.name] = userRef.id;
-            });
-
-            const userValues = Object.values(createdUserRefs);
-            const initialInventoryList: Omit<InventoryItem, 'id' | 'managedBy'>[] = [
-                { reference: 'MO-W-001', name: 'Wireless Mouse', type: 'Electronics', quantity: 15, createdAt: new Date('2023-10-26T10:00:00Z').toISOString() },
-                { reference: 'KB-E-002', name: 'Ergonomic Keyboard', type: 'Electronics', quantity: 2, createdAt: new Date('2023-10-26T10:05:00Z').toISOString() }
-            ];
-            initialInventoryList.forEach((item, index) => {
-                const itemRef = db.collection('inventory').doc();
-                batch.set(itemRef, { ...item, managedBy: userValues[index % userValues.length] });
-            });
-            void batch.commit();
-            console.log("Database seeded successfully.");
-            return;
-        }
-
-        Object.entries(existingUsers).forEach(([id, existingUser]) => {
-            const mockUser = initialUsersList.find(user =>
-                user.name.toLowerCase() === String(existingUser.name || '').toLowerCase()
-            );
-            const updates = {
-                username: existingUser.username || mockUser?.username || String(existingUser.name || '').toLowerCase().replace(/\s+/g, '.'),
-                ...(existingUser.email || !mockUser?.email ? {} : { email: mockUser.email }),
-                role: existingUser.role || mockUser?.role || existingUser.description,
-                status: existingUser.status || 'active',
-            };
-            db.collection('users').doc(id).update(updates);
-        });
-    };
-    seedDatabase();
-
     // --- Real-time Listeners ---
     const markCollectionLoaded = (collection: string) => {
         loadedCollections.current.add(collection);
@@ -170,6 +125,26 @@ export const useAppController = () => {
         db?.collection('notifications').doc(authenticatedUser.id).delete();
     }
   }, [authenticatedUser, notifications, db]);
+
+  useEffect(() => {
+    if (!authenticatedUser || !['Owner', 'Manager'].includes(authenticatedUser.role)) {
+      setAuditEvents([]);
+      return;
+    }
+
+    let active = true;
+    void db.collection('audit-events').get()
+      .then(snapshot => {
+        if (active) {
+          setAuditEvents(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as AuditEvent)));
+        }
+      })
+      .catch(error => console.error('Unable to load audit history:', error));
+
+    return () => {
+      active = false;
+    };
+  }, [authenticatedUser, db]);
   
   // --- Auth Handlers ---
   const handleLogin = async (username: string, password: string) => {
@@ -461,13 +436,40 @@ export const useAppController = () => {
         notify(t('errors.removeBackorder'), 'error');
     }
   };
-  const handleAddUser = (user: Omit<User, 'id' | 'hasSetPassword'>) => {
+  const handleAddUser = async (user: Omit<User, 'id' | 'hasSetPassword'>, password?: string) => {
     if (authenticatedUser?.role !== 'Owner') return;
     if (users.some(existingUser => (existingUser.username || existingUser.name).toLowerCase() === user.username.toLowerCase())) {
         notify(t('errors.usernameTaken'), 'error');
         return;
     }
-    db.collection('users').add({ ...user, hasSetPassword: false });
+    try {
+      const hasLocalPassword = isLocalDevelopment && Boolean(password) && Boolean(authService?.setPassword);
+      const reference = await db.collection('users').add({ ...user, hasSetPassword: hasLocalPassword });
+      if (hasLocalPassword && password && authService?.setPassword) {
+        await authService.setPassword(reference.id, password);
+      }
+      notify(t('userManagement.userCreated'), 'success');
+    } catch (error) {
+      console.error('Unable to create user:', error);
+      notify(t('errors.createUser'), 'error');
+    }
+  };
+
+  const handleCreateFirstLocalUser = async (
+    user: Omit<User, 'id' | 'hasSetPassword'>,
+    password: string,
+  ) => {
+    if (!isLocalDevelopment || users.length > 0) return;
+    try {
+      const reference = await db.collection('users').add({ ...user, hasSetPassword: true });
+      await authService?.setPassword?.(reference.id, password);
+      const createdUser = { ...user, id: reference.id, hasSetPassword: true };
+      setAuthenticatedUser(createdUser);
+      storeUserId(reference.id);
+    } catch (error) {
+      console.error('Unable to create the first local user:', error);
+      setLoginError(t('errors.createUser'));
+    }
   };
   const handleUpdateUser = (userId: string, updates: Partial<User>) => {
     if (authenticatedUser?.role !== 'Owner') return;
@@ -491,8 +493,9 @@ export const useAppController = () => {
   const reorderItemsCount = inventory.filter(item => item.quantity < 3).length;
 
   return {
-    users, inventory, orderRequests, tasks: visibleTasks, dailyOrders, laboratories, backorders,
-    authenticatedUser, selectedUserForLogin, loginError, authService,
+    users, inventory, orderRequests, tasks: visibleTasks, dailyOrders, laboratories, backorders, auditEvents,
+    authenticatedUser, selectedUserForLogin, loginError, authService, isLocalDevelopment,
+    handleCreateFirstLocalUser,
     isSettingFirstPassword, isChangingPassword, activeTab, activeNotifications, isSidebarOpen, isDataReady,
     stockItemsCount, reorderItemsCount,
     setActiveTab, setIsSidebarOpen, setIsChangingPassword, setSelectedUserForLogin,
