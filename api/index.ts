@@ -6,7 +6,7 @@ type VerifiedClaims = Record<string, unknown>;
 
 const userPoolId = process.env.COGNITO_USER_POOL_ID;
 const clientId = process.env.COGNITO_USER_POOL_CLIENT_ID;
-const allowedOrigin = process.env.WEB_ORIGIN;
+const allowedOrigin = process.env.WEB_ORIGIN?.replace(/\/+$/, '');
 
 const verifier = userPoolId && clientId
   ? CognitoJwtVerifier.create({

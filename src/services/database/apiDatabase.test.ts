@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import { ApiDatabase } from './apiDatabase';
+import { ApiDatabase, ApiHttpError } from './apiDatabase';
 
 vi.mock('aws-amplify/auth', () => ({
   fetchAuthSession: vi.fn(),
@@ -50,5 +50,16 @@ describe('ApiDatabase', () => {
       .set({ name: 'Updated' })).rejects.toThrow('write failed');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves the HTTP status for API failures', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(
+      JSON.stringify({ message: 'forbidden' }),
+      { status: 403 },
+    ));
+
+    const request = new ApiDatabase('https://api.example.com').collection('users').get();
+    await expect(request).rejects.toMatchObject({ message: 'forbidden', status: 403 });
+    await expect(request).rejects.toBeInstanceOf(ApiHttpError);
   });
 });

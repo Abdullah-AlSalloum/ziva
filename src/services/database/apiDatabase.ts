@@ -11,7 +11,15 @@ import {
 } from './localDatabase';
 
 type Operation = { readonly __localOperation: 'increment' | 'arrayUnion'; readonly amount?: number; readonly values?: unknown[] };
-class ApiHttpError extends Error {}
+export class ApiHttpError extends Error {
+  public constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiHttpError';
+  }
+}
 
 const collectionPaths: Record<string, string> = {
   orderRequests: 'order-requests',
@@ -84,7 +92,7 @@ export class ApiDatabase implements Database {
           }
           throw new ApiHttpError(body && typeof body === 'object' && 'message' in body && body.message
             ? body.message
-            : `API request failed with status ${response.status}.`);
+            : `API request failed with status ${response.status}.`, response.status);
         }
         return body as T;
       } catch (error) {

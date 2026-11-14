@@ -9,6 +9,7 @@ import { configureCognito } from '../config/cognitoConfig';
 import { clearStoredUserId, getStoredUserId, storeUserId } from '../services/auth/authSession';
 import { getStoredLanguage, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
+import { ApiHttpError } from '../services/database/apiDatabase';
 
 const playSound = (type: 'confirmation' | 'notification') => {
   const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -178,6 +179,14 @@ export const useAppController = () => {
                 }
             } catch (error) {
                 console.error('Unable to load the authenticated user profile:', error);
+                if (error instanceof ApiHttpError) {
+                    setLoginError(error.status === 401
+                        ? t('errors.apiAuthentication')
+                        : error.status === 403
+                            ? t('errors.apiForbidden')
+                            : t('errors.apiUnavailable'));
+                    return;
+                }
             }
             setLoginError(t('errors.profileNotFound'));
             return;
