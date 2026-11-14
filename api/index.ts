@@ -6,7 +6,10 @@ type VerifiedClaims = Record<string, unknown>;
 
 const userPoolId = process.env.COGNITO_USER_POOL_ID;
 const clientId = process.env.COGNITO_USER_POOL_CLIENT_ID;
-const allowedOrigin = process.env.WEB_ORIGIN?.replace(/\/+$/, '');
+const allowedOrigins = (process.env.WEB_ORIGIN ?? '')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
 const verifier = userPoolId && clientId
   ? CognitoJwtVerifier.create({
@@ -30,8 +33,10 @@ const getApiPath = (url: string) => {
 
 const setCorsHeaders = (request: VercelRequest, response: VercelResponse) => {
   const origin = request.headers.origin;
-  if (allowedOrigin && origin === allowedOrigin) {
-    response.setHeader('access-control-allow-origin', allowedOrigin);
+  const normalizedOrigin = origin?.replace(/\/+$/, '');
+  const isLocalOrigin = Boolean(normalizedOrigin && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(normalizedOrigin));
+  if (normalizedOrigin && (allowedOrigins.includes(normalizedOrigin) || isLocalOrigin)) {
+    response.setHeader('access-control-allow-origin', normalizedOrigin);
     response.setHeader('vary', 'Origin');
   }
   response.setHeader('access-control-allow-headers', 'authorization, content-type');
