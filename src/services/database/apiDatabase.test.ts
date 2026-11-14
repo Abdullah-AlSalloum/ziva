@@ -1,20 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchAuthSession } from 'aws-amplify/auth';
 import { ApiDatabase, ApiHttpError } from './apiDatabase';
-
-vi.mock('aws-amplify/auth', () => ({
-  fetchAuthSession: vi.fn(),
-}));
 
 describe('ApiDatabase', () => {
   beforeEach(() => {
-    vi.mocked(fetchAuthSession).mockResolvedValue({
-      tokens: { accessToken: { toString: () => 'access-token' } },
-    } as never);
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  it('loads all cursor pages with the Cognito access token', async () => {
+  it('loads all cursor pages using the same-origin session cookie', async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock
       .mockResolvedValueOnce(new Response(JSON.stringify({
@@ -34,7 +26,7 @@ describe('ApiDatabase', () => {
       1,
       'https://api.example.com/inventory?limit=100',
       expect.objectContaining({
-        headers: expect.objectContaining({ authorization: 'Bearer access-token' }),
+        headers: expect.objectContaining({ 'content-type': 'application/json' }),
       }),
     );
     expect(fetchMock.mock.calls[1][0]).toBe('https://api.example.com/inventory?limit=100&nextToken=next-page');
@@ -50,6 +42,17 @@ describe('ApiDatabase', () => {
       .set({ name: 'Updated' })).rejects.toThrow('write failed');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps application collection names to API paths', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+
+    await new ApiDatabase('/api').collection('dailyOrders').get();
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/daily-orders?limit=100',
+      expect.anything(),
+    );
   });
 
   it('preserves the HTTP status for API failures', async () => {

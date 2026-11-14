@@ -4,10 +4,11 @@ import { translations } from '../i18n/translations';
 
 const NetworkStatus: React.FC = () => {
   const { t } = useTranslation(translations);
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
   const [showRestoredMessage, setShowRestoredMessage] = useState(false);
 
   useEffect(() => {
+    setIsOnline(navigator.onLine);
     const handleOffline = () => {
       setIsOnline(false);
       setShowRestoredMessage(false);

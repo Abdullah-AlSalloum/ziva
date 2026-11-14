@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "next dev",
+    "dev:vite": "vite",
+    "build": "next build",
+    "build:vite": "vite build",
+    "set:user-password": "tsx scripts/set-user-password.ts",
     "test": "vitest run",
     "preview": "vite preview"
   },
@@ -18,11 +21,15 @@
     "@vercel/speed-insights": "^1.2.0",
     "aws-amplify": "^6.15.8",
     "aws-jwt-verify": "^5.2.1",
+    "bcryptjs": "^3.0.3",
+    "next": "^16.4.6",
+    "next-auth": "^5.0.0-beta.32",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.0",
@@ -32,6 +39,7 @@
     "baseline-browser-mapping": "^2.11.35",
     "eslint-plugin-react": "^7.37.5",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vitest": "^5.1.0"

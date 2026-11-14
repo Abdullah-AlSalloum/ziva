@@ -3,9 +3,7 @@ import { AuditEvent, Backorder, DailyOrder, InventoryItem, Laboratory, OrderItem
 import { createDatabase } from '../services/database/createDatabase';
 import { Database, LocalFieldValue } from '../services/database/localDatabase';
 import { AuthService } from '../services/auth/authService';
-import { CognitoAuthService } from '../services/auth/cognitoAuthService';
-import { LocalAuthService } from '../services/auth/localAuthService';
-import { configureCognito } from '../config/cognitoConfig';
+import { DatabaseAuthService } from '../services/auth/databaseAuthService';
 import { clearStoredUserId, getStoredUserId, storeUserId } from '../services/auth/authSession';
 import { getStoredLanguage, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
@@ -29,13 +27,9 @@ const playSound = (type: 'confirmation' | 'notification') => {
 
 export const useAppController = () => {
   const { language, direction, t } = useTranslation(translations);
-  const isLocalDevelopment = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL;
+  const isLocalDevelopment = false;
   const [db] = useState<Database>(() => createDatabase());
-  const [authService] = useState<AuthService | null>(() => isLocalDevelopment
-    ? new LocalAuthService()
-    : configureCognito()
-      ? new CognitoAuthService()
-      : null);
+  const [authService] = useState<AuthService | null>(() => new DatabaseAuthService());
   const [users, setUsers] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [orderRequests, setOrderRequests] = useState<OrderRequest[]>([]);
@@ -68,6 +62,11 @@ export const useAppController = () => {
   }, [direction, language]);
   
   useEffect(() => {
+    if (!authenticatedUser) {
+        setIsDataReady(false);
+        return;
+    }
+
     // --- Real-time Listeners ---
     loadedCollections.current.clear();
     setIsDataReady(false);
@@ -489,11 +488,11 @@ export const useAppController = () => {
         return;
     }
     try {
-      const hasLocalPassword = isLocalDevelopment && Boolean(password) && Boolean(authService?.setPassword);
-      const reference = await db.collection('users').add({ ...user, hasSetPassword: hasLocalPassword });
-      if (hasLocalPassword && password && authService?.setPassword) {
-        await authService.setPassword(reference.id, password);
-      }
+      const reference = await db.collection('users').add({
+        ...user,
+        hasSetPassword: Boolean(password),
+        ...(password ? { password } : {}),
+      });
       notify(t('userManagement.userCreated'), 'success');
     } catch (error) {
       console.error('Unable to create user:', error);

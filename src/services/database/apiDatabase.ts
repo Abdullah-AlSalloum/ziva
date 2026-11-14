@@ -1,4 +1,3 @@
-import { fetchAuthSession } from 'aws-amplify/auth';
 import {
   Database,
   Batch,
@@ -23,6 +22,7 @@ export class ApiHttpError extends Error {
 
 const collectionPaths: Record<string, string> = {
   orderRequests: 'order-requests',
+  dailyOrders: 'daily-orders',
   customers: 'laboratories',
 };
 
@@ -65,10 +65,6 @@ export class ApiDatabase implements Database {
   }
 
   async request<T>(path: string, init?: RequestInit): Promise<T> {
-    const session = await fetchAuthSession();
-    const token = session.tokens?.accessToken?.toString();
-    if (!token) throw new Error('An authenticated session is required to access the API.');
-
     const method = init?.method ?? 'GET';
     const canRetry = method === 'GET' || method === 'HEAD';
     let lastError: unknown;
@@ -78,7 +74,6 @@ export class ApiDatabase implements Database {
         const response = await fetch(`${this.baseUrl}${path}`, {
           ...init,
           headers: {
-            authorization: `Bearer ${token}`,
             'content-type': 'application/json',
             ...init?.headers,
           },
@@ -130,8 +125,9 @@ export class ApiDatabase implements Database {
     if (collection !== 'notifications') {
       return `/${this.pathFor(collection)}/${encodeURIComponent(id)}`;
     }
-    const session = await fetchAuthSession();
-    const subject = session.tokens?.accessToken?.payload.sub;
+    const response = await fetch('/api/auth/session', { cache: 'no-store' });
+    const session = response.ok ? await response.json() as { user?: { id?: unknown } } : null;
+    const subject = session?.user?.id;
     if (typeof subject !== 'string' || !subject) {
       throw new Error('An authenticated session is required to access notifications.');
     }

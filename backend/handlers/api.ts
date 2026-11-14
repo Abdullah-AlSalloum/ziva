@@ -1,11 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import {
-  AdminAddUserToGroupCommand,
-  AdminCreateUserCommand,
-  AdminDeleteUserCommand,
-  CognitoIdentityProviderClient,
-  CreateGroupCommand,
-} from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DeleteCommand,
@@ -14,16 +7,12 @@ import {
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const WORKSPACE_ID = 'default';
 const TABLE_NAME = process.env.TABLE_NAME;
-const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
-const cognito = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION,
-  maxAttempts: 3,
-});
 const database = DynamoDBDocumentClient.from(new DynamoDBClient({
   region: process.env.AWS_REGION,
   maxAttempts: 3,
@@ -53,6 +42,7 @@ const schemas = {
     status: z.enum(['active', 'disabled']),
     email: z.string().email().max(320).optional(),
     hasSetPassword: z.boolean(),
+    password: z.string().min(6).max(128).optional(),
   }).strict(),
   inventory: z.object({
     reference: z.string().trim().min(1).max(120),
@@ -259,7 +249,15 @@ const writeAudit = async (tenant: string, subject: string, role: string, action:
 };
 
 const withoutKeys = (item: Record<string, unknown>) => {
-  const { PK: _pk, SK: _sk, GSI1PK: _gsi1pk, GSI1SK: _gsi1sk, entityType: _entityType, ...publicItem } = item;
+  const {
+    PK: _pk,
+    SK: _sk,
+    GSI1PK: _gsi1pk,
+    GSI1SK: _gsi1sk,
+    entityType: _entityType,
+    passwordHash: _passwordHash,
+    ...publicItem
+  } = item;
   return publicItem;
 };
 
@@ -282,16 +280,20 @@ const queryCollection = async (tenant: string, collection: CollectionName, nextT
 
 const createItem = async (tenant: string, subject: string, role: string, collection: Exclude<CollectionName, 'audit-events'>, body: unknown) => {
   const data = validate(collection, body);
+  const { password, ...publicData } = data as typeof data & { password?: string };
   const id = randomUUID();
   const now = new Date().toISOString();
   const item = {
     ...keysFor(tenant, collectionConfig[collection].entityType, id),
-    ...data,
+    ...publicData,
     id,
     entityType: collectionConfig[collection].entityType,
-    createdAt: 'createdAt' in data && data.createdAt ? data.createdAt : now,
+    ...(collection === 'users' && password
+      ? { passwordHash: await bcrypt.hash(password, 12), hasSetPassword: true }
+      : {}),
+    createdAt: 'createdAt' in publicData && publicData.createdAt ? publicData.createdAt : now,
     GSI1PK: `TENANT#${tenant}#${collectionConfig[collection].entityType}`,
-    GSI1SK: `${'createdAt' in data && data.createdAt ? data.createdAt : now}#${id}`,
+    GSI1SK: `${'createdAt' in publicData && publicData.createdAt ? publicData.createdAt : now}#${id}`,
   };
   await database.send(new PutCommand({
     TableName: TABLE_NAME,
@@ -302,69 +304,14 @@ const createItem = async (tenant: string, subject: string, role: string, collect
   return withoutKeys(item);
 };
 
-const createCognitoUser = async (username: string, email: string, role: Role) => {
-  if (!COGNITO_USER_POOL_ID) throw new Error('Cognito user pool is not configured.');
-
-  await cognito.send(new AdminCreateUserCommand({
-    UserPoolId: COGNITO_USER_POOL_ID,
-    Username: username,
-    UserAttributes: [{ Name: 'email', Value: email }],
-  }));
-
-  try {
-    try {
-      await cognito.send(new AdminAddUserToGroupCommand({
-        UserPoolId: COGNITO_USER_POOL_ID,
-        Username: username,
-        GroupName: role,
-      }));
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-        await cognito.send(new CreateGroupCommand({
-          UserPoolId: COGNITO_USER_POOL_ID,
-          GroupName: role,
-          Description: `Ziva users with the ${role} role`,
-        }));
-        await cognito.send(new AdminAddUserToGroupCommand({
-          UserPoolId: COGNITO_USER_POOL_ID,
-          Username: username,
-          GroupName: role,
-        }));
-      } else {
-        throw error;
-      }
-    }
-  } catch (error) {
-    await cognito.send(new AdminDeleteUserCommand({
-      UserPoolId: COGNITO_USER_POOL_ID,
-      Username: username,
-    }));
-    throw error;
-  }
-};
-
 const createUser = async (tenant: string, subject: string, actorRole: string, body: unknown) => {
   const data = schemas.users.parse(body);
-  if (!data.email) throw new ClientError(400, 'An email address is required for the Cognito invitation.');
+  if (!data.password) throw new ClientError(400, 'A password is required when creating a user.');
   if (actorRole !== 'Owner' && data.role === 'Owner') {
     throw new ClientError(403, 'Only an Owner can create another Owner.');
   }
 
-  await createCognitoUser(data.username, data.email, data.role);
-  try {
-    return await createItem(tenant, subject, actorRole, 'users', {
-      ...data,
-      hasSetPassword: false,
-    });
-  } catch (error) {
-    if (COGNITO_USER_POOL_ID) {
-      await cognito.send(new AdminDeleteUserCommand({
-        UserPoolId: COGNITO_USER_POOL_ID,
-        Username: data.username,
-      }));
-    }
-    throw error;
-  }
+  return createItem(tenant, subject, actorRole, 'users', data);
 };
 
 const putItem = async (tenant: string, subject: string, role: string, collection: Exclude<CollectionName, 'audit-events'>, id: string, body: unknown) => {

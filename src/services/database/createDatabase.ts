@@ -1,9 +1,7 @@
 import { ApiDatabase } from './apiDatabase';
-import { Database, LocalDatabase } from './localDatabase';
+import { Database } from './localDatabase';
 
 export const createDatabase = (): Database => {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-  if (apiBaseUrl) return new ApiDatabase(apiBaseUrl);
-  if (import.meta.env.DEV) return new LocalDatabase();
-  throw new Error('Production API configuration is missing. Set VITE_API_BASE_URL.');
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api';
+  return new ApiDatabase(apiBaseUrl);
 };
