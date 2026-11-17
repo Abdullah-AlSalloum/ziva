@@ -50,7 +50,7 @@ const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, is
       role: form.role,
       status: 'active',
       email: form.email.trim() || undefined,
-    }, isLocalDevelopment ? form.password : undefined);
+    }, form.password);
     setForm({ name: '', username: '', role: 'Manager', email: '', password: '' });
   };
 
