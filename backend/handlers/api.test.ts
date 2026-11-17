@@ -46,6 +46,18 @@ describe('API authorization boundaries', () => {
     })).toMatchObject({ subject: 'user-123', tenant: 'default', role: 'Owner' });
   });
 
+  it('normalizes role claims before authorization', () => {
+    expect(getIdentity({
+      requestContext: {
+        authorizer: {
+          jwt: {
+            claims: { sub: 'user-123', 'custom:role': ' owner ' },
+          },
+        },
+      },
+    })).toMatchObject({ subject: 'user-123', role: 'Owner' });
+  });
+
   it('enforces operation permissions independently of frontend visibility', () => {
     expect(isAllowed('users', 'GET', 'Owner')).toBe(true);
     expect(isAllowed('users', 'GET', 'Sales Lead')).toBe(false);

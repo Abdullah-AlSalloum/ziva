@@ -8,6 +8,7 @@ const toClaims = (session: Awaited<ReturnType<typeof getSession>>) => {
   if (!session?.user?.id || !session.user.role) return undefined;
   return {
     sub: session.user.id,
+    'custom:role': session.user.role,
     'cognito:groups': [session.user.role],
   };
 };

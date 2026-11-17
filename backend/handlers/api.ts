@@ -115,6 +115,7 @@ const updateSchemas = {
 type Role = typeof userRoles[number];
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 const allRoles: readonly Role[] = userRoles;
+const normalizeRole = (value: string) => userRoles.find(role => role.toLowerCase() === value.trim().toLowerCase());
 const rolePermissions: Record<CollectionName, Partial<Record<Method, readonly Role[]>>> = {
   users: { GET: ['Owner', 'Manager'], POST: ['Owner', 'Manager'], PATCH: ['Owner', 'Manager'], DELETE: ['Owner', 'Manager'] },
   inventory: { GET: allRoles, POST: ['Owner', 'Manager', 'Technical Service'], PATCH: ['Owner', 'Manager', 'Technical Service'], DELETE: ['Owner', 'Manager'] },
@@ -165,8 +166,8 @@ export const getIdentity = (event: ApiEvent) => {
   const groups = Array.isArray(groupClaim)
     ? groupClaim.filter((group): group is string => typeof group === 'string')
     : typeof groupClaim === 'string' ? groupClaim.split(',').map(group => group.trim()) : [];
-  const roleClaim = typeof claims?.['custom:role'] === 'string' ? claims['custom:role'] : undefined;
-  const role = roleClaim ?? groups.find(group => userRoles.includes(group as typeof userRoles[number]));
+  const roleClaim = typeof claims?.['custom:role'] === 'string' ? normalizeRole(claims['custom:role']) : undefined;
+  const role = roleClaim ?? groups.map(normalizeRole).find(Boolean);
   return subject && role
     ? { subject, tenant: WORKSPACE_ID, role }
     : null;
