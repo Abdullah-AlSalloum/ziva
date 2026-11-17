@@ -52,7 +52,6 @@ const Avatar: React.FC<AvatarProps> = ({ name, size = 'medium' }) => {
     <div
       className={`rounded-full flex items-center justify-center font-bold ${sizeClasses[size]}`}
       style={{ backgroundColor: bgColor, color: textColor }}
-      title={name}
     >
       {initials}
     </div>

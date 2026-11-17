@@ -4,6 +4,7 @@ import { PlusIcon, TrashIcon, LinkIcon, ClipboardIcon, ClipboardDocumentCheckIco
 import { formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 const CustomerSection: React.FC<{
   laboratories: Laboratory[];
@@ -15,6 +16,7 @@ const CustomerSection: React.FC<{
   const [name, setName] = useState('');
   const [googleMapsLink, setGoogleMapsLink] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([{ name: '', phoneNumber: '' }]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedLabId, setCopiedLabId] = useState<string | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<{ id: string; message: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,18 +45,23 @@ const CustomerSection: React.FC<{
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validContacts = contacts.filter(c => c.name.trim() !== '' || c.phoneNumber.trim() !== '');
     if (name.trim() !== '' && validContacts.length > 0) {
-      onAddLaboratory({
-        name: name.trim(),
-        googleMapsLink: googleMapsLink.trim(),
-        contacts: validContacts.map(c => ({ name: c.name.trim(), phoneNumber: c.phoneNumber.trim() })),
-      });
-      setName('');
-      setGoogleMapsLink('');
-      setContacts([{ name: '', phoneNumber: '' }]);
+      setIsSubmitting(true);
+      try {
+        await onAddLaboratory({
+          name: name.trim(),
+          googleMapsLink: googleMapsLink.trim(),
+          contacts: validContacts.map(c => ({ name: c.name.trim(), phoneNumber: c.phoneNumber.trim() })),
+        });
+        setName('');
+        setGoogleMapsLink('');
+        setContacts([{ name: '', phoneNumber: '' }]);
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       onNotify(t('laboratories.validation'), 'error');
     }
@@ -123,6 +130,7 @@ const CustomerSection: React.FC<{
                       disabled={contacts.length <= 1}
                       className="justify-self-end rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={t('laboratories.removeContact')}
+                      data-tooltip={t('laboratories.removeContact')}
                     >
                       <TrashIcon className="h-5 w-5" />
                     </button>
@@ -133,6 +141,7 @@ const CustomerSection: React.FC<{
                 type="button"
                 onClick={handleAddContactField}
                 className="mt-3 inline-flex items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                data-tooltip={t('laboratories.addContact')}
               >
                 <PlusIcon className="h-4 w-4" />
                 {t('laboratories.addContact')}
@@ -140,9 +149,9 @@ const CustomerSection: React.FC<{
           </div>
 
           <div className="flex justify-end">
-            <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 sm:w-auto">
+            <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 sm:w-auto">
               <PlusIcon className="h-5 w-5" /> {t('laboratories.add')}
-            </button>
+            </LoadingButton>
           </div>
         </form>
       </div>
@@ -176,13 +185,14 @@ const CustomerSection: React.FC<{
                 <div className="flex items-center justify-end gap-1">
                   {lab.googleMapsLink && (
                     <div className="flex items-center relative">
-                      <a href={lab.googleMapsLink} target="_blank" rel="noopener noreferrer" className="rounded-xl p-2 text-gray-400 hover:bg-purple-100 hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:hover:bg-purple-900/50" aria-label={`${t('laboratories.viewMap')} ${lab.name}`}>
+                      <a href={lab.googleMapsLink} target="_blank" rel="noopener noreferrer" data-tooltip={`${t('laboratories.viewMap')} ${lab.name}`} className="rounded-xl p-2 text-gray-400 hover:bg-purple-100 hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:hover:bg-purple-900/50" aria-label={`${t('laboratories.viewMap')} ${lab.name}`}>
                          <LinkIcon className="h-5 w-5" />
                       </a>
                       <button 
                           onClick={() => handleCopyLink(lab)} 
                           className="rounded-xl p-2 text-gray-400 hover:bg-purple-100 hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:hover:bg-purple-900/50" 
                           aria-label={`${t('laboratories.copyMap')} ${lab.name}`}
+                          data-tooltip={`${t('laboratories.copyMap')} ${lab.name}`}
                       >
                           {copiedLabId === lab.id ? <ClipboardDocumentCheckIcon className="h-5 w-5 text-green-500" /> : <ClipboardIcon className="h-5 w-5" />}
                       </button>
@@ -193,7 +203,7 @@ const CustomerSection: React.FC<{
                       )}
                     </div>
                   )}
-                  <button onClick={() => handleRemoveClick(lab)} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:hover:bg-red-900/50" aria-label={`${t('laboratories.remove')} ${lab.name}`}>
+                  <button onClick={() => handleRemoveClick(lab)} data-tooltip={`${t('laboratories.remove')} ${lab.name}`} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:hover:bg-red-900/50" aria-label={`${t('laboratories.remove')} ${lab.name}`}>
                     <TrashIcon className="h-5 w-5" />
                   </button>
                 </div>

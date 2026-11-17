@@ -102,7 +102,7 @@ const BackorderSection: React.FC<BackorderSectionProps> = ({ backorders, users, 
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 dark:text-gray-400">
                             <p>{t('backorder.for')} <span className="font-semibold text-gray-700 dark:text-gray-300">{order.customerName}</span></p>
                             {user && (
-                                <div className="flex items-center gap-2" title={`${t('backorder.loggedBy')} ${user.name}`}>
+                                <div className="flex items-center gap-2" data-tooltip={`${t('backorder.loggedBy')} ${user.name}`}>
                                     <span>{t('backorder.by')}</span>
                                     <div className="flex items-center gap-2">
                                       <Avatar name={user.name} size="small"/>
@@ -113,7 +113,7 @@ const BackorderSection: React.FC<BackorderSectionProps> = ({ backorders, users, 
                         </div>
                     </div>
                     <div className="flex justify-end">
-                        <button onClick={() => handleRemoveClick(order)} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:hover:bg-red-900/50" aria-label={`${t('backorder.remove')} ${order.customerName}`}>
+                        <button onClick={() => handleRemoveClick(order)} data-tooltip={`${t('backorder.remove')} ${order.customerName}`} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:hover:bg-red-900/50" aria-label={`${t('backorder.remove')} ${order.customerName}`}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>

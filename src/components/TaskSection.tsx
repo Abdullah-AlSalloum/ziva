@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import { formatDate, formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 interface TaskSectionProps {
   tasks: Task[];
@@ -26,18 +27,24 @@ const TaskSection: React.FC<TaskSectionProps> = ({ tasks, users, onAddTask, onRe
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>(users[0]?.id ?? '');
   const [dueDate, setDueDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   
   const getUser = (userId: string) => users.find(u => u.id === userId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (description && assignedTo && dueDate) {
-      onAddTask({ description, assignedTo, dueDate, status: 'To Do' });
-      setDescription('');
-      setDueDate('');
+      setIsSubmitting(true);
+      try {
+        await onAddTask({ description, assignedTo, dueDate, status: 'To Do' });
+        setDescription('');
+        setDueDate('');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
   
@@ -100,9 +107,9 @@ const TaskSection: React.FC<TaskSectionProps> = ({ tasks, users, onAddTask, onRe
             <input type="date" id="task-due" value={dueDate} min={today} onChange={e => setDueDate(e.target.value)} required className="mt-2 block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-sky-500 focus:ring-sky-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
           </div>
           <div>
-            <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 lg:w-auto">
+            <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 lg:w-auto">
               <PlusIcon className="h-5 w-5" /> {t('tasks.add')}
-            </button>
+            </LoadingButton>
           </div>
         </form>
       </div>
@@ -127,13 +134,13 @@ const TaskSection: React.FC<TaskSectionProps> = ({ tasks, users, onAddTask, onRe
                     <div className="min-w-0">
                         <p className="text-base font-semibold leading-6 text-gray-900 dark:text-white">{task.description}</p>
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500 dark:text-gray-400">
-                           <div className="flex items-center gap-2" title={`${t('tasks.assignedTo')} ${user?.name ?? ''}`}>
+                           <div className="flex items-center gap-2" data-tooltip={`${t('tasks.assignedTo')} ${user?.name ?? ''}`}>
                                 <strong className="font-medium text-gray-600 dark:text-gray-300">{t('tasks.to')}</strong>
                                 {user && <Avatar name={user.name} size="small"/>}
                                 <span>{user?.name || 'N/A'}</span>
                             </div>
                             {creator && (
-                                <div className="flex items-center gap-2" title={`${t('tasks.createdBy')} ${creator.name}`}>
+                                <div className="flex items-center gap-2" data-tooltip={`${t('tasks.createdBy')} ${creator.name}`}>
                                     <strong className="font-medium text-gray-600 dark:text-gray-300">{t('tasks.by')}</strong>
                                     <Avatar name={creator.name} size="small"/>
                                     <span>{creator.name}</span>
@@ -160,7 +167,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({ tasks, users, onAddTask, onRe
                             menuClassName="min-w-0"
                           />
                         </div>
-                        <button onClick={() => handleRemoveClick(task.id)} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={t('tasks.remove')}>
+                        <button onClick={() => handleRemoveClick(task.id)} data-tooltip={t('tasks.remove')} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={t('tasks.remove')}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>

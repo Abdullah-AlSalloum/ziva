@@ -4,6 +4,7 @@ import { PlusIcon, TrashIcon } from './icons';
 import { formatDate, formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 interface DailyOrdersSectionProps {
   orders: DailyOrder[];
@@ -15,17 +16,23 @@ const DailyOrdersSection: React.FC<DailyOrdersSectionProps> = ({ orders, onAddOr
   const { language, t } = useTranslation(translations);
   const [orderDetails, setOrderDetails] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingRemoval, setPendingRemoval] = useState<{ id: string; message: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (orderDetails) {
       const today = new Date().toISOString().split('T')[0];
-      onAddOrder({ orderDetails, customerName, dateSent: today });
-      setOrderDetails('');
-      setCustomerName('');
+      setIsSubmitting(true);
+      try {
+        await onAddOrder({ orderDetails, customerName, dateSent: today });
+        setOrderDetails('');
+        setCustomerName('');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -66,9 +73,9 @@ const DailyOrdersSection: React.FC<DailyOrdersSectionProps> = ({ orders, onAddOr
             <input type="text" id="order-customer" value={customerName} onChange={e => setCustomerName(e.target.value)} required className="mt-2 block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
           </div>
           <div>
-            <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 lg:w-auto">
+            <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 lg:w-auto">
               <PlusIcon className="h-5 w-5" /> {t('dailyOrders.logOrder')}
-            </button>
+            </LoadingButton>
           </div>
         </form>
       </div>
@@ -93,7 +100,7 @@ const DailyOrdersSection: React.FC<DailyOrdersSectionProps> = ({ orders, onAddOr
                         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{t('dailyOrders.customer')} <span className="font-semibold text-gray-700 dark:text-gray-300">{order.customerName}</span></p>
                     </div>
                     <div className="flex justify-end">
-                        <button onClick={() => handleRemoveClick(order)} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('dailyOrders.removeOrder')} ${order.customerName}`}>
+                        <button onClick={() => handleRemoveClick(order)} data-tooltip={`${t('dailyOrders.removeOrder')} ${order.customerName}`} className="rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('dailyOrders.removeOrder')} ${order.customerName}`}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>

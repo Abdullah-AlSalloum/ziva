@@ -6,6 +6,7 @@ import EditItemModal from './EditItemModal';
 import { formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 interface ReorderSectionProps {
   items: InventoryItem[];
@@ -21,12 +22,18 @@ const AddReorderItemForm: React.FC<{ onAddItem: ReorderSectionProps['onAddItem']
   const [reference, setReference] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (reference && name && type) {
-      onAddItem({ reference, name, type, quantity: 0 }); // Add with quantity 0 to ensure it's in reorder list
-      onCancel();
+      setIsSubmitting(true);
+      try {
+        await onAddItem({ reference, name, type, quantity: 0 });
+        onCancel();
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -48,7 +55,7 @@ const AddReorderItemForm: React.FC<{ onAddItem: ReorderSectionProps['onAddItem']
             </label>
             <div className="flex flex-col-reverse gap-3 md:col-span-3 md:flex-row md:justify-end">
                 <button type="button" onClick={onCancel} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">{t('inventory.cancel')}</button>
-                <button type="submit" className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">{t('reorder.addItem')}</button>
+                <LoadingButton type="submit" loading={isSubmitting} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">{t('reorder.addItem')}</LoadingButton>
             </div>
         </form>
     </div>
@@ -111,11 +118,11 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('reorder.title')}</h2>
             <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-                 <button type="button" onClick={handleExport} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 sm:flex-none">
+                 <button type="button" onClick={handleExport} data-tooltip={t('reorder.export')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 sm:flex-none">
                     <ArrowDownTrayIcon className="h-5 w-5" />
                     {t('reorder.export')}
                 </button>
-                <button type="button" onClick={() => setShowAddForm(true)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:flex-none">
+                <button type="button" onClick={() => setShowAddForm(true)} data-tooltip={t('reorder.addManually')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:flex-none">
                     <PlusIcon className="h-5 w-5" />
                     {t('reorder.addManually')}
                 </button>
@@ -159,6 +166,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
                         <button
                           onClick={() => handleRestockClick(item.id)}
                           className="inline-flex items-center gap-1.5 border-0 bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300"
+                          data-tooltip={t('reorder.restock')}
                         >
                           <PlusIcon className="w-4 h-4" />
                           <span>{t('reorder.restock')}</span>
@@ -166,10 +174,10 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
                     </div>
                   </div>
                   <div className="flex items-center justify-start gap-1 border-gray-200 dark:border-gray-700 md:border-s md:ps-4 md:justify-center">
-                    <button onClick={() => setEditingItem(item)} className="rounded-lg p-2 text-gray-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`${t('reorder.editItem')} ${item.name}`}>
+                    <button onClick={() => setEditingItem(item)} data-tooltip={`${t('reorder.editItem')} ${item.name}`} className="rounded-lg p-2 text-gray-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`${t('reorder.editItem')} ${item.name}`}>
                       <PencilIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => setPendingRemoval({ id: item.id, message: t('reorder.removeConfirmation').replace('{name}', item.name) })} className="rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('reorder.removeItem')} ${item.name}`}>
+                    <button onClick={() => setPendingRemoval({ id: item.id, message: t('reorder.removeConfirmation').replace('{name}', item.name) })} data-tooltip={`${t('reorder.removeItem')} ${item.name}`} className="rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('reorder.removeItem')} ${item.name}`}>
                       <TrashIcon className="h-5 w-5" />
                     </button>
                     {pendingRemoval && <ConfirmDialog message={pendingRemoval.message} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemoveItem(pendingRemoval.id); setPendingRemoval(null); }} />}

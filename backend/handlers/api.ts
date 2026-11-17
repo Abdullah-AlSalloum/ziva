@@ -232,11 +232,13 @@ const keysFor = (tenant: string, entityType: string, id: string) => ({
 
 const writeAudit = async (tenant: string, subject: string, role: string, action: string, entityType: string, entityId: string) => {
   const createdAt = new Date().toISOString();
+  const id = randomUUID();
   await database.send(new PutCommand({
     TableName: TABLE_NAME,
     Item: {
-      ...keysFor(tenant, 'AUDIT', randomUUID()),
+      ...keysFor(tenant, 'AUDIT', id),
       entityType: 'AUDIT',
+      id,
       GSI1PK: `TENANT#${tenant}#AUDIT`,
       GSI1SK: `${createdAt}#${entityId}`,
       action,

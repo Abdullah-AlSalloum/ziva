@@ -38,6 +38,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ message, type = '
             type="button"
             onClick={onDismiss}
             className="inline-flex text-gray-400 rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-indigo-500"
+            data-tooltip={t('notifications.close')}
           >
             <span className="sr-only">{t('notifications.close')}</span>
             <XMarkIcon className="h-5 w-5" />

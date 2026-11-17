@@ -40,6 +40,7 @@ export const useAppController = () => {
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [notifications, setNotifications] = useState<Record<string, string[]>>({});
   const [isDataReady, setIsDataReady] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const loadedCollections = useRef(new Set<string>());
 
   const [selectedUserForLogin, setSelectedUserForLogin] = useState<User | null>(null);
@@ -95,17 +96,32 @@ export const useAppController = () => {
   }, [authenticatedUser, db]);
 
   useEffect(() => {
-    if (authenticatedUser || users.length === 0) return;
-    if (!authService) return;
-
-    if (authService.restoreSession) {
-        void authService.restoreSession(users).then(user => {
-            if (user && user.status !== 'disabled') {
-                setAuthenticatedUser(user);
-            }
-        });
+    if (isAuthReady || authenticatedUser) return;
+    if (!authService) {
+        setIsAuthReady(true);
         return;
     }
+
+    if (authService.restoreSession) {
+        let active = true;
+        void authService.restoreSession(users)
+            .then(user => {
+                if (active && user && user.status !== 'disabled') {
+                    setAuthenticatedUser(user);
+                }
+            })
+            .catch(error => {
+                console.error('Unable to restore the authentication session:', error);
+            })
+            .finally(() => {
+                if (active) setIsAuthReady(true);
+            });
+        return () => {
+            active = false;
+        };
+    }
+
+    if (users.length === 0) return;
 
     const storedUserId = getStoredUserId();
     const storedUser = users.find(user => user.id === storedUserId);
@@ -115,7 +131,8 @@ export const useAppController = () => {
     } else if (storedUserId) {
         clearStoredUserId();
     }
-  }, [authenticatedUser, users, authService]);
+    setIsAuthReady(true);
+  }, [authenticatedUser, users, authService, isAuthReady]);
   
    useEffect(() => {
     if (authenticatedUser && notifications[authenticatedUser.id]) {
@@ -253,15 +270,16 @@ export const useAppController = () => {
     }
   };
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService?.logout?.();
     clearStoredUserId();
     setAuthenticatedUser(null);
   };
   
   // --- Data Handlers ---
-  const handleAddItem = (newItem: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>) => {
+  const handleAddItem = async (newItem: Omit<InventoryItem, 'id' | 'managedBy' | 'createdAt'>) => {
     if (!db || !authenticatedUser) return;
-    db.collection('inventory').add({ ...newItem, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() });
+    await db.collection('inventory').add({ ...newItem, managedBy: authenticatedUser.id, createdAt: new Date().toISOString() });
   };
   const handleUpdateItem = (itemId: string, updates: Partial<Omit<InventoryItem, 'id'>>) => {
     db?.collection('inventory').doc(itemId).update(updates);
@@ -326,16 +344,16 @@ export const useAppController = () => {
     }
   };
 
-  const handleAddTask = (task: Omit<Task, 'id' | 'createdBy' | 'createdAt'>) => {
+  const handleAddTask = async (task: Omit<Task, 'id' | 'createdBy' | 'createdAt'>) => {
     if (!db || !authenticatedUser) return;
     // FIX: Explicitly type `newTask` to prevent type inference issues.
     const newTask: Omit<Task, 'id'> = { ...task, createdBy: authenticatedUser.id, createdAt: new Date().toISOString() };
-    db.collection('tasks').add(newTask);
+    await db.collection('tasks').add(newTask);
 
     if (newTask.assignedTo !== authenticatedUser.id) {
         playSound('confirmation');
         const message = `${authenticatedUser.name} assigned you a new task: "${newTask.description.substring(0, 50)}..."`;
-        db.collection('notifications').doc(newTask.assignedTo).set({
+        await db.collection('notifications').doc(newTask.assignedTo).set({
             messages: LocalFieldValue.arrayUnion(message)
         }, { merge: true });
     }
@@ -364,8 +382,8 @@ export const useAppController = () => {
         notify(t('errors.removeTask'), 'error');
     }
   };
-  const handleAddDailyOrder = (order: Omit<DailyOrder, 'id' | 'createdAt'>) => {
-    db?.collection('dailyOrders').add({ ...order, createdAt: new Date().toISOString() });
+  const handleAddDailyOrder = async (order: Omit<DailyOrder, 'id' | 'createdAt'>) => {
+    await db?.collection('dailyOrders').add({ ...order, createdAt: new Date().toISOString() });
   };
   const handleRemoveDailyOrder = async (orderId: string) => {
     if (!db) return;
@@ -376,9 +394,9 @@ export const useAppController = () => {
         notify(t('errors.removeDailyOrder'), 'error');
     }
   };
-   const handleAddOrderRequest = (order: Omit<OrderRequest, 'id' | 'userId' | 'createdAt'>) => {
+   const handleAddOrderRequest = async (order: Omit<OrderRequest, 'id' | 'userId' | 'createdAt'>) => {
     if (!db || !authenticatedUser) return;
-    db.collection('orderRequests').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
+    await db.collection('orderRequests').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
   };
   const handleRemoveOrderRequest = async (itemId: string) => {
     if (!db) return;
@@ -456,8 +474,8 @@ export const useAppController = () => {
     if (!db) return;
     db.collection('inventory').doc(itemId).update({ quantity: LocalFieldValue.increment(restockQuantity) });
   };
-  const handleAddLaboratory = (laboratory: Omit<Laboratory, 'id' | 'createdAt'>) => {
-    db?.collection('customers').add({ ...laboratory, createdAt: new Date().toISOString() });
+  const handleAddLaboratory = async (laboratory: Omit<Laboratory, 'id' | 'createdAt'>) => {
+    await db?.collection('customers').add({ ...laboratory, createdAt: new Date().toISOString() });
   };
   const handleRemoveLaboratory = async (laboratoryId: string) => {
     if (!db) return;
@@ -468,9 +486,9 @@ export const useAppController = () => {
         notify(t('errors.removeLaboratory'), 'error');
     }
   };
-  const handleAddBackorder = (order: Omit<Backorder, 'id' | 'userId' | 'createdAt'>) => {
+  const handleAddBackorder = async (order: Omit<Backorder, 'id' | 'userId' | 'createdAt'>) => {
     if (!db || !authenticatedUser) return;
-    db.collection('backorders').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
+    await db.collection('backorders').add({ ...order, userId: authenticatedUser.id, createdAt: new Date().toISOString() });
   };
   const handleRemoveBackorder = async (orderId: string) => {
     if (!db) return;
@@ -539,7 +557,7 @@ export const useAppController = () => {
 
   return {
     users, inventory, orderRequests, tasks: visibleTasks, dailyOrders, laboratories, backorders, auditEvents,
-    authenticatedUser, selectedUserForLogin, loginError, authService, isLocalDevelopment,
+    authenticatedUser, selectedUserForLogin, loginError, authService, isLocalDevelopment, isAuthReady,
     handleCreateFirstLocalUser,
     isSettingFirstPassword, isChangingPassword, activeTab, activeNotifications, isSidebarOpen, isDataReady,
     stockItemsCount, reorderItemsCount,

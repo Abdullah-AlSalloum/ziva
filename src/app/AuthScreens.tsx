@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar';
 import { EyeIcon, EyeSlashIcon, LockClosedIcon } from '../components/icons';
 import { createTranslator, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
+import LoadingButton from '../components/LoadingButton';
 
 export const LoadingScreen: FC<{ message: string; variant?: 'default' | 'workspace' }> = ({ message, variant = 'default' }) => {
   if (variant === 'workspace') {
@@ -53,7 +54,7 @@ export const LoadingScreen: FC<{ message: string; variant?: 'default' | 'workspa
 
 export const LoginPage: FC<{
   users: User[];
-  onLogin: (username: string, password: string) => void;
+  onLogin: (username: string, password: string) => void | Promise<void>;
   onRegister?: (user: Omit<User, 'id' | 'hasSetPassword'>, password: string) => void;
   isLocalDevelopment?: boolean;
   error?: string;
@@ -65,15 +66,21 @@ export const LoginPage: FC<{
   const [email, setEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
     if (!password) {
       setError(t('auth.enterPassword'));
       return;
     }
-    onLogin(username.trim(), password);
+    setIsSubmitting(true);
+    try {
+      await onLogin(username.trim(), password);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRegister = (event: React.FormEvent) => {
@@ -136,7 +143,7 @@ export const LoginPage: FC<{
                 <input required type="password" dir="ltr" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
               </label>
               {(error || externalError) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-right text-sm font-medium leading-6 text-red-700">{error || externalError}</p>}
-              <button type="submit" className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t('auth.createLocalUser')}</button>
+              <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700">{t('auth.createLocalUser')}</LoadingButton>
             </form>
           ) : <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -147,13 +154,13 @@ export const LoginPage: FC<{
               {t('auth.password')}
               <div className="relative mt-1">
                 <input required type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-left text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600" />
-                <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute inset-y-0 left-0 flex w-11 items-center justify-center text-slate-400 transition-colors hover:text-indigo-600 dark:hover:text-indigo-300">
+                <button type="button" onClick={() => setShowPassword(previous => !previous)} data-tooltip={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute inset-y-0 left-0 flex w-11 items-center justify-center text-slate-400 transition-colors hover:text-indigo-600 dark:hover:text-indigo-300">
                   {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                 </button>
               </div>
             </label>
             {(error || externalError) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-right text-sm font-medium leading-6 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">{error || externalError}</p>}
-            <button type="submit" className="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-indigo-600/30 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 active:translate-y-0 dark:bg-indigo-500 dark:hover:bg-indigo-400">{t('auth.signIn')}</button>
+            <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-indigo-600/30 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 active:translate-y-0 dark:bg-indigo-500 dark:hover:bg-indigo-400">{t('auth.signIn')}</LoadingButton>
           </form>}
         </div>
       </div>
@@ -163,13 +170,14 @@ export const LoginPage: FC<{
 
 export const AuthModal: FC<{
   selectedUser: User;
-  onLogin: (password: string) => void;
+  onLogin: (password: string) => void | Promise<void>;
   onClose: () => void;
 }> = ({ selectedUser, onLogin, onClose }) => {
   const t = createTranslator(translations, 'ar');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -179,13 +187,18 @@ export const AuthModal: FC<{
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!password) {
       setError(t('auth.passwordEmpty'));
       return;
     }
-    onLogin(password);
+    setIsSubmitting(true);
+    try {
+      await onLogin(password);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -200,12 +213,12 @@ export const AuthModal: FC<{
           <div className="relative">
             <LockClosedIcon className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
             <input required type={showPassword ? 'text' : 'password'} autoFocus value={password} onChange={event => setPassword(event.target.value)} className="block w-full pl-10 pr-10 py-2 rounded-md dark:bg-gray-700 dark:text-white" placeholder={t('auth.password')} />
-            <button type="button" onClick={() => setShowPassword(previous => !previous)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute left-3 top-2.5 text-gray-400">
+            <button type="button" onClick={() => setShowPassword(previous => !previous)} data-tooltip={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="absolute left-3 top-2.5 text-gray-400">
               {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <button type="submit" className="w-full py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{t('auth.signIn')}</button>
+          <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">{t('auth.signIn')}</LoadingButton>
           <button type="button" onClick={onClose} className="w-full text-center py-2 text-sm text-gray-600 dark:text-gray-400 hover:underline">{t('auth.cancel')}</button>
         </form>
       </div>
@@ -214,7 +227,7 @@ export const AuthModal: FC<{
 };
 
 export const PasswordModal: FC<{
-  onSave: (passwords: Record<string, string>) => void;
+  onSave: (passwords: Record<string, string>) => void | Promise<void>;
   onClose: () => void;
   isFirstTimeSetup?: boolean;
 }> = ({ onSave, onClose, isFirstTimeSetup = false }) => {
@@ -224,6 +237,7 @@ export const PasswordModal: FC<{
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -235,7 +249,7 @@ export const PasswordModal: FC<{
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (newPassword.length < 6) {
       setError(t('auth.passwordMinLength'));
@@ -245,7 +259,12 @@ export const PasswordModal: FC<{
       setError(t('auth.passwordMismatch'));
       return;
     }
-    onSave({ currentPassword, newPassword });
+    setIsSubmitting(true);
+    try {
+      await onSave({ currentPassword, newPassword });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -275,7 +294,7 @@ export const PasswordModal: FC<{
           </div>
           <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800/80 sm:flex-row sm:justify-end sm:px-8">
             <button type="button" onClick={onClose} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('auth.cancel')}</button>
-            <button type="submit" className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">{t('auth.savePassword')}</button>
+            <LoadingButton type="submit" loading={isSubmitting} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40">{t('auth.savePassword')}</LoadingButton>
           </div>
         </form>
       </div>

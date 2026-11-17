@@ -79,7 +79,17 @@ export class ApiDatabase implements Database {
           },
         });
         const text = await response.text();
-        const body = text ? JSON.parse(text) as T & { message?: string } : undefined;
+        let body: (T & { message?: string }) | undefined;
+        if (text) {
+          try {
+            body = JSON.parse(text) as T & { message?: string };
+          } catch {
+            throw new ApiHttpError(
+              `API returned an invalid response (status ${response.status}).`,
+              response.status,
+            );
+          }
+        }
         if (!response.ok) {
           if (canRetry && response.status >= 500 && attempt < 2) {
             await new Promise(resolve => window.setTimeout(resolve, 250 * (attempt + 1)));
@@ -158,7 +168,9 @@ class ApiCollectionReference implements CollectionReference {
         body: JSON.stringify(data),
       },
     );
-    return this.doc(typeof result.id === 'string' ? result.id : createId());
+    const reference = this.doc(typeof result.id === 'string' ? result.id : createId());
+    this.apiDatabase.notify(this.collectionName);
+    return reference;
   }
 
   limit(count: number) {
@@ -209,7 +221,7 @@ class ApiDocumentReference implements DocumentReference {
   ) {}
 
   async set(data: DocumentData, options?: { merge?: boolean }) {
-    if (options?.merge) return this.update(data);
+    if (options?.merge) return this.update(data, true);
     await this.database.request(await this.database.documentPath(this.collectionName, this.id), {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -217,8 +229,17 @@ class ApiDocumentReference implements DocumentReference {
     this.database.notify(this.collectionName);
   }
 
-  async update(updates: DocumentData) {
-    const existing = await this.database.getDocument(this.collectionName, this.id);
+  async update(updates: DocumentData, createIfMissing = false) {
+    let existing: DocumentData = {};
+    let exists = true;
+    try {
+      existing = await this.database.getDocument(this.collectionName, this.id);
+    } catch (error) {
+      if (!(error instanceof ApiHttpError) || error.status !== 404 || !createIfMissing) {
+        throw error;
+      }
+      exists = false;
+    }
     const resolved = Object.fromEntries(Object.entries(updates).map(([key, value]) => {
       if (!isOperation(value)) return [key, value];
       if (value.__localOperation === 'increment') {
@@ -228,7 +249,7 @@ class ApiDocumentReference implements DocumentReference {
       return [key, [...new Set([...current, ...(value.values ?? [])])]];
     }));
     await this.database.request(await this.database.documentPath(this.collectionName, this.id), {
-      method: 'PATCH',
+      method: exists ? 'PATCH' : 'PUT',
       body: JSON.stringify(resolved),
     });
     this.database.notify(this.collectionName);

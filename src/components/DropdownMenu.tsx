@@ -61,6 +61,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel}
+        data-tooltip={ariaLabel}
         onClick={() => isOpen ? setIsOpen(false) : openMenu()}
         onKeyDown={event => {
           if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {

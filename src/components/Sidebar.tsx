@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
-                <nav className="min-h-0 flex-1 overflow-y-auto space-y-1 pr-1">
+                <nav className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto space-y-1 pr-1">
                     <NavLink
                         icon={<HomeIcon />}
                         label={t('nav.dashboard')}

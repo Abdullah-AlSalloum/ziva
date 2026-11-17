@@ -30,7 +30,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ message, onConfirm, onCan
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <h2 id="confirm-dialog-title" className="text-lg font-semibold text-slate-900 dark:text-white">{t('confirm.title')}</h2>
-              <button type="button" onClick={onCancel} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200" aria-label={t('auth.cancel')}>
+              <button type="button" onClick={onCancel} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200" aria-label={t('auth.cancel')} data-tooltip={t('auth.cancel')}>
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>

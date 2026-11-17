@@ -6,6 +6,7 @@ import EditItemModal from './EditItemModal';
 import { formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 interface InventorySectionProps {
   items: InventoryItem[];
@@ -26,16 +27,22 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [quantity, setQuantity] = useState(3);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (reference && name && type && quantity >= 3) {
-      onAddItem({ reference, name, type, quantity });
-      setReference('');
-      setName('');
-      setType('');
-      setQuantity(3);
-      onCancel();
+      setIsSubmitting(true);
+      try {
+        await onAddItem({ reference, name, type, quantity });
+        setReference('');
+        setName('');
+        setType('');
+        setQuantity(3);
+        onCancel();
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -61,7 +68,7 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
             </label>
             <div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:justify-end lg:col-span-6">
                 <button type="button" onClick={onCancel} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">{t('inventory.cancel')}</button>
-                <button type="submit" className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">{t('inventory.add')}</button>
+                <LoadingButton type="submit" loading={isSubmitting} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">{t('inventory.add')}</LoadingButton>
             </div>
         </form>
     </div>
@@ -311,11 +318,11 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                   <td className="whitespace-nowrap px-6 py-4 text-center text-sm text-gray-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700" disabled={item.quantity === 0}>
+                      <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} aria-label={language === 'ar' ? 'تقليل الكمية' : 'Decrease quantity'} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700" disabled={item.quantity === 0}>
                         <MinusIcon className="h-5 w-5" />
                       </button>
                       <span className="text-base font-bold text-gray-900 dark:text-white w-8 text-center">{item.quantity}</span>
-                      <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-700">
+                      <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} aria-label={language === 'ar' ? 'زيادة الكمية' : 'Increase quantity'} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-700">
                         <PlusIcon className="h-5 w-5" />
                       </button>
                       </div>
@@ -326,10 +333,10 @@ const InventorySection: React.FC<InventorySectionProps> = ({ items, users, onUpd
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <div className="flex items-center justify-center gap-2">
-                    <button onClick={() => setEditingItem(item)} className="p-1 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-label={`Edit ${item.name}`}>
+                    <button onClick={() => setEditingItem(item)} data-tooltip={`${t('inventory.edit')} ${item.name}`} className="p-1 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-label={`${t('inventory.edit')} ${item.name}`}>
                         <PencilIcon className="h-5 w-5" />
                     </button>
-                    <button onClick={() => setPendingRemoval({ id: item.id, message: `Are you sure you want to remove item "${item.name}"? This action cannot be undone.` })} className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`Remove ${item.name}`}>
+                    <button onClick={() => setPendingRemoval({ id: item.id, message: `Are you sure you want to remove item "${item.name}"? This action cannot be undone.` })} data-tooltip={`${t('inventory.remove')} ${item.name}`} className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" aria-label={`${t('inventory.remove')} ${item.name}`}>
                         <TrashIcon className="h-5 w-5" />
                     </button>
                       {pendingRemoval && <ConfirmDialog message={pendingRemoval.message} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemoveItem(pendingRemoval.id); setPendingRemoval(null); }} />}

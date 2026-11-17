@@ -19,6 +19,12 @@ textarea {
   font-family: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 html[lang="ar"],
 html[lang="ar"] body,
 html[lang="ar"] button,
@@ -50,6 +56,15 @@ select:disabled,
 input:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;
+}
+
+button {
+  white-space: nowrap;
+}
+
+button.inline-flex {
+  flex-direction: row;
+  align-items: center;
 }
 
 button:focus-visible,

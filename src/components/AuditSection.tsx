@@ -1,15 +1,36 @@
 import React from 'react';
-import { AuditEvent } from '../types';
+import { AuditEvent, User } from '../types';
 import { ClockIcon } from './icons';
 import { formatDate, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 
 interface AuditSectionProps {
   events: AuditEvent[];
+  users: User[];
 }
 
-const AuditSection: React.FC<AuditSectionProps> = ({ events }) => {
+const AuditSection: React.FC<AuditSectionProps> = ({ events, users }) => {
   const { language, t } = useTranslation(translations);
+  const actionLabels: Record<string, string> = language === 'ar'
+    ? { CREATE: 'إضافة', UPDATE: 'تعديل', UPSERT: 'حفظ', DELETE: 'حذف' }
+    : { CREATE: 'Created', UPDATE: 'Updated', UPSERT: 'Saved', DELETE: 'Deleted' };
+  const entityLabels: Record<string, string> = language === 'ar'
+    ? {
+        INVENTORY: 'المخزون',
+        TASK: 'مهمة',
+        DAILY_ORDER: 'طلب يومي',
+        ORDER_REQUEST: 'طلب توريد',
+        LABORATORY: 'مختبر',
+        USER: 'مستخدم',
+      }
+    : {
+        INVENTORY: 'Inventory',
+        TASK: 'Task',
+        DAILY_ORDER: 'Daily order',
+        ORDER_REQUEST: 'Supply request',
+        LABORATORY: 'Laboratory',
+        USER: 'User',
+      };
 
   return (
     <section className="space-y-5">
@@ -34,18 +55,19 @@ const AuditSection: React.FC<AuditSectionProps> = ({ events }) => {
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {events.map(event => (
-              <article key={event.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
+            {events.map((event, index) => (
+              <article key={`audit-${event.id || 'legacy'}-${index}`} className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold uppercase tracking-wide text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                      {event.action}
+                      {actionLabels[event.action] ?? event.action}
                     </span>
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{event.targetEntityType}</span>
-                    <span className="truncate text-sm text-slate-500 dark:text-slate-400">{event.targetEntityId}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {entityLabels[event.targetEntityType] ?? event.targetEntityType}
+                    </span>
                   </div>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    {event.actorRole} · {event.actorId}
+                    {users.find(user => user.id === event.actorId)?.name ?? event.actorRole}
                   </p>
                 </div>
                 <time dateTime={event.createdAt} className="text-sm text-slate-500 dark:text-slate-400 sm:text-right">

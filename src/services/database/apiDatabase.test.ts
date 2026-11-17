@@ -58,16 +58,41 @@ describe('ApiDatabase', () => {
   it('creates collection documents with POST', async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: 'new-user' }), { status: 201 }));
 
-    const reference = await new ApiDatabase('/api').collection('users').add({
+    const database = new ApiDatabase('/api');
+    const refresh = vi.fn();
+    database.subscribe('users', refresh);
+    const reference = await database.collection('users').add({
       name: 'New User',
     });
 
     expect(reference.id).toBe('new-user');
+    expect(refresh).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledWith(
       '/api/users',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ name: 'New User' }),
+      }),
+    );
+  });
+
+  it('creates a missing document when merging data', async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: 'not found' }), { status: 404 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await new ApiDatabase('/api').collection('inventory').doc('item-1').set(
+      { messages: ['A new task'] },
+      { merge: true },
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/inventory/item-1',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ messages: ['A new task'] }),
       }),
     );
   });

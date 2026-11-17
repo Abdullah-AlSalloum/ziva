@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/PC/Desktop/invictus%20manager/node_modules/next/src/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-rsc']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,4HACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0]}},
-    {"offset": {"line": 9, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/PC/Desktop/invictus%20manager/src/app/layout.tsx"],"sourcesContent":["import type { Metadata } from 'next';\r\nimport '../index.css';\r\n\r\nexport const metadata: Metadata = {\r\n  title: 'نظام إدارة زيفا',\r\n  description: 'نظام إدارة العمليات والمخزون',\r\n};\r\n\r\nexport default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {\r\n  return (\r\n    <html lang=\"ar\" dir=\"rtl\">\r\n      <body suppressHydrationWarning>{children}</body>\r\n    </html>\r\n  );\r\n}\r\n"],"names":["metadata","title","description","RootLayout","children","lang","dir","suppressHydrationWarning"],"mappings":";;;;;;;;;AAGO,MAAMA,WAAqB;IAChCC,OAAO;IACPC,aAAa;AACf;AAEe,SAASC,WAAW,EAAEC,QAAQ,EAA2C;IACtF,qBACE,8OAAC;QAAKC,MAAK;QAAKC,KAAI;kBAClB,cAAA,8OAAC;YAAKC,wBAAwB;sBAAEH;;;;;;;;;;;AAGtC"}}]
-}

@@ -1,0 +1,68 @@
+{
+  "..\\node_modules\\next\\dist\\client\\dev\\hot-reloader\\app\\web-socket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts": {
+    "id": "..\\node_modules\\next\\dist\\client\\dev\\hot-reloader\\app\\web-socket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/AuditSection": {
+    "id": "app\\AppContent.tsx -> ../components/AuditSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AuditSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/BackorderSection": {
+    "id": "app\\AppContent.tsx -> ../components/BackorderSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BackorderSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/CustomerSection": {
+    "id": "app\\AppContent.tsx -> ../components/CustomerSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_CustomerSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/DailyOrdersSection": {
+    "id": "app\\AppContent.tsx -> ../components/DailyOrdersSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DailyOrdersSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/DashboardSection": {
+    "id": "app\\AppContent.tsx -> ../components/DashboardSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DashboardSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/InventorySection": {
+    "id": "app\\AppContent.tsx -> ../components/InventorySection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_InventorySection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/OrderRequestSection": {
+    "id": "app\\AppContent.tsx -> ../components/OrderRequestSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_OrderRequestSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/ReorderSection": {
+    "id": "app\\AppContent.tsx -> ../components/ReorderSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_ReorderSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/TaskSection": {
+    "id": "app\\AppContent.tsx -> ../components/TaskSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_TaskSection_tsx.js"
+    ]
+  },
+  "app\\AppContent.tsx -> ../components/UserManagementSection": {
+    "id": "app\\AppContent.tsx -> ../components/UserManagementSection",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_UserManagementSection_tsx.js"
+    ]
+  }
+}

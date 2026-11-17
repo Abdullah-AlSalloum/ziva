@@ -51,26 +51,27 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
   };
 
   return (
-    <header className="app-header relative z-10 shrink-0 bg-white/95 backdrop-blur-sm dark:bg-slate-900/95">
-      <div className="mx-auto max-w-full px-3 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-3">
-          <div className="flex items-center">
+    <header className="app-header relative z-10 w-full min-w-0 shrink-0 overflow-visible bg-white/95 backdrop-blur-sm dark:bg-slate-900/95">
+      <div className="mx-auto min-w-0 max-w-full px-3 sm:px-6 lg:px-8">
+        <div className="relative flex h-16 min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center">
             <button
                 onClick={onToggleSidebar}
                 className="rounded-xl p-2 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-700 lg:hidden"
                 aria-label={t('nav.openSidebar')}
+                data-tooltip={t('nav.openSidebar')}
                 aria-controls="app-sidebar"
             >
                 <Bars3Icon className="h-6 w-6" />
             </button>
-            <div className="ml-1 flex min-w-0 items-center gap-2 lg:ml-0">
+            <div className="ml-1 hidden min-w-0 items-center gap-2 overflow-hidden sm:flex lg:ml-0">
               <svg className="h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7l8 5 8-5" />
               </svg>
               <span className="truncate text-lg font-semibold tracking-tight text-slate-900 dark:text-white sm:text-xl">{t('app.name')}</span>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          <div className="absolute left-3 top-1/2 flex -translate-y-1/2 shrink-0 items-center gap-1 sm:static sm:translate-y-0 sm:gap-3">
             <div ref={languageMenuRef} className="relative" dir="ltr">
               <button
                 type="button"
@@ -85,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
                 aria-haspopup="listbox"
                 aria-expanded={isLanguageMenuOpen}
                 aria-label={t('header.language')}
-                className="flex items-center rounded-xl border border-slate-200 bg-slate-50 py-2 pl-3 pr-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-500/60 dark:hover:bg-slate-700"
+                className="flex shrink-0 items-center rounded-xl border border-slate-200 bg-slate-50 py-2 pl-3 pr-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-500/60 dark:hover:bg-slate-700"
               >
               <span className="pointer-events-none pl-3 text-indigo-600 dark:text-indigo-400" aria-hidden="true">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -141,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
             <button onClick={toggleDarkMode} className="rounded-xl p-2 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-700" aria-label={isDarkMode ? t('header.switchToLight') : t('header.switchToDark')}>
               {isDarkMode ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
             </button>
-            <div className="flex items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-2 dark:bg-slate-800 sm:gap-3 sm:pr-3">
+            <div className="hidden items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-2 dark:bg-slate-800 sm:flex sm:gap-3 sm:pr-3">
                <Avatar name={currentUser.name} size="medium" />
                 <span className="font-medium text-gray-700 dark:text-gray-200 hidden sm:block">{t('header.welcome')}, {currentUser.name}</span>
             </div>
@@ -150,6 +151,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
                 onClick={onOpenChangePassword}
                 className="rounded-xl p-2 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-700"
                 aria-label={t('header.changePassword')}
+                data-tooltip={t('header.changePassword')}
               >
                 <KeyIcon className="h-6 w-6" />
             </button>
@@ -157,6 +159,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, onOpenChangePass
                 onClick={onLogout}
                 className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 aria-label={t('header.logOut')}
+                data-tooltip={t('header.logOut')}
               >
                 <LogoutIcon className="h-6 w-6" />
             </button>

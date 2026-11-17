@@ -104,7 +104,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case Tab.Users:
         return <UserManagementSection users={users} isLocalDevelopment={isLocalDevelopment} onAddUser={onAddUser} onUpdateUser={onUpdateUser} onToggleStatus={onToggleUserStatus} />;
       case Tab.Audit:
-        return <AuditSection events={auditEvents} />;
+        return <AuditSection events={auditEvents} users={users} />;
       default:
         return null;
     }

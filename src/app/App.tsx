@@ -15,6 +15,10 @@ const App: React.FC = () => {
   const { t } = useTranslation(translations);
   const controller = useAppController();
 
+  if (!controller.isAuthReady) {
+    return <LoadingScreen message={translations[getStoredLanguage()]['status.loadingUsers']} />;
+  }
+
   if (!controller.authenticatedUser) {
     if (!controller.authService) {
       return <LoadingScreen message={t('errors.authNotConfigured')} />;
@@ -61,7 +65,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+    <div className="flex min-w-0 flex-col h-screen overflow-x-hidden bg-slate-50 text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
       <NetworkStatus />
       <NotificationContainer notifications={controller.activeNotifications} onRemoveNotification={controller.handleRemoveNotification} />
       {controller.isChangingPassword && (
@@ -76,7 +80,7 @@ const App: React.FC = () => {
         onOpenChangePassword={() => controller.setIsChangingPassword(true)}
         onToggleSidebar={() => controller.setIsSidebarOpen(previous => !previous)}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 overflow-hidden">
         <Sidebar
           activeTab={controller.activeTab}
           setActiveTab={controller.setActiveTab}
@@ -92,7 +96,7 @@ const App: React.FC = () => {
           isOpen={controller.isSidebarOpen}
           setIsOpen={controller.setIsSidebarOpen}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto w-full">
             <AppContent
               activeTab={controller.activeTab}

@@ -11,4 +11,5 @@ export interface AuthService {
   completePasswordChange?(password: string): Promise<AuthenticationResult>;
   changePassword?(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }>;
   restoreSession?(users: User[]): Promise<User | null>;
+  logout?(): Promise<void>;
 }

@@ -6,6 +6,7 @@ import Avatar from './Avatar';
 import { formatDate, formatNumber, useTranslation } from '../i18n/i18n';
 import { translations } from '../i18n/translations';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingButton from './LoadingButton';
 
 interface OrderRequestSectionProps {
   items: OrderRequest[];
@@ -20,6 +21,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
   const { language, t } = useTranslation(translations);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([{ name: '', quantity: 1 }]);
   const [customerName, setCustomerName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<{ id: string; message: string } | null>(null);
   const [requestSearch, setRequestSearch] = useState('');
@@ -57,7 +59,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const filteredItems = orderItems
       .filter(item => item.name.trim() !== '')
@@ -67,9 +69,14 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
       }));
 
     if (filteredItems.length > 0 && customerName.trim() !== '') {
-      onAddItem({ orderDetails: filteredItems, customerName: customerName.trim() });
-      setOrderItems([{ name: '', quantity: 1 }]);
-      setCustomerName('');
+      setIsSubmitting(true);
+      try {
+        await onAddItem({ orderDetails: filteredItems, customerName: customerName.trim() });
+        setOrderItems([{ name: '', quantity: 1 }]);
+        setCustomerName('');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -92,7 +99,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                const isAvailable = stockItem && stockItem.quantity >= item.quantity;
               return (
               <li key={index} className="flex items-center">
-                <span className={`w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0 ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`} title={isAvailable ? 'In Stock' : 'Out of Stock'}></span>
+                <span className={`w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0 ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`} data-tooltip={isAvailable ? 'In Stock' : 'Out of Stock'}></span>
                 {item.name}{' '}
                 <span className="text-gray-500 dark:text-gray-400">({item.quantity}x)</span>
               </li>
@@ -257,6 +264,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                             disabled={orderItems.length <= 1}
                             className="mt-1 rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={t('orderRequests.removeItem')}
+                            data-tooltip={t('orderRequests.removeItem')}
                           >
                             <TrashIcon className="h-5 w-5" />
                           </button>
@@ -269,6 +277,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                 type="button"
                 onClick={handleAddItemField}
                 className="mt-4 inline-flex items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 hover:border-amber-400 hover:bg-amber-50 dark:border-gray-600 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-amber-900/20"
+                data-tooltip={t('orderRequests.addAnother')}
               >
                 <PlusIcon className="h-4 w-4" />
                 {t('orderRequests.addAnother')}
@@ -276,9 +285,9 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
             </div>
             
             <div className="flex justify-end border-t border-gray-200 pt-5 dark:border-gray-700">
-              <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-auto">
+              <LoadingButton type="submit" loading={isSubmitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 sm:w-auto">
                 <PlusIcon className="h-5 w-5" /> {t('orderRequests.addRequest')}
-              </button>
+              </LoadingButton>
             </div>
           </form>
       </div>
@@ -344,7 +353,7 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
                             <p>{t('orderRequests.for')} <span className="font-medium text-gray-700 dark:text-gray-300">{order.customerName}</span></p>
                             {user && (
-                                <div className="flex items-center" title={`${t('orderRequests.createdBy')} ${user.name}`}>
+                                <div className="flex items-center" data-tooltip={`${t('orderRequests.createdBy')} ${user.name}`}>
                                     <span>{t('orderRequests.by')}</span>
                                     <div className="flex items-center gap-1.5">
                                       <Avatar name={user.name} size="small"/>
@@ -359,14 +368,14 @@ const OrderRequestSection: React.FC<OrderRequestSectionProps> = ({ items, users,
                             <button 
                                 onClick={() => onMoveToBackorder(order)}
                                 className="inline-flex items-center gap-2 rounded-xl bg-amber-100 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60 focus:outline-none focus:ring-2 focus:ring-amber-500" 
-                                title={t('orderRequests.moveToBackorder')}
+                                data-tooltip={t('orderRequests.moveToBackorder')}
                             >
                                 <span className="sr-only">{t('orderRequests.moveToBackorder')}</span>
                                 <ClockIcon className="h-4 w-4" />
                                 <span className="hidden sm:inline">{t('orderRequests.moveToBackorder')}</span>
                             </button>
                         )}
-                        <button onClick={() => handleRemoveClick(order)} className="inline-flex items-center gap-2 rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('orderRequests.removeOrder')} ${order.customerName}`}>
+                        <button onClick={() => handleRemoveClick(order)} data-tooltip={`${t('orderRequests.removeOrder')} ${order.customerName}`} className="inline-flex items-center gap-2 rounded-xl p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('orderRequests.removeOrder')} ${order.customerName}`}>
                             <TrashIcon className="h-5 w-5" />
                         </button>
                     </div>

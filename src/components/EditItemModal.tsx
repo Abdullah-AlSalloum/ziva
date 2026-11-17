@@ -46,7 +46,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, users, onSave, onCl
         <div className="p-5 sm:p-7">
           <div className="mb-6 flex items-center justify-between">
             <h2 id="modal-title" className="text-xl font-semibold text-gray-900 dark:text-white">{t('editItem.title')}</h2>
-            <button onClick={onClose} className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onClick={onClose} data-tooltip={t('auth.cancel')} aria-label={t('auth.cancel')} className="rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
