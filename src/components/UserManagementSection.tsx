@@ -91,17 +91,15 @@ const UserManagementSection: React.FC<UserManagementSectionProps> = ({ users, is
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('userManagement.email')}</span>
             <input required type="email" placeholder={t('userManagement.emailPlaceholder')} value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
           </label>
-          {isLocalDevelopment && (
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('auth.password')}</span>
-              <input required type="password" value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
-            </label>
-          )}
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('auth.password')}</span>
+            <input required minLength={6} type="password" value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} className="mt-2 w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 sm:text-sm" />
+          </label>
           <button type="submit" className="inline-flex items-center justify-center gap-2 self-end rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <PlusIcon className="h-5 w-5" /> {t('userManagement.addUser')}
           </button>
         </form>
-        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">{t(isLocalDevelopment ? 'userManagement.localHint' : 'userManagement.cognitoHint')}</p>
+        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">{t('userManagement.databaseHint')}</p>
       </div>
 
       <div className="overflow-visible rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/80 dark:bg-gray-800 dark:ring-gray-700/80">

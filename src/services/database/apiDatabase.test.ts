@@ -55,6 +55,23 @@ describe('ApiDatabase', () => {
     );
   });
 
+  it('creates collection documents with POST', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: 'new-user' }), { status: 201 }));
+
+    const reference = await new ApiDatabase('/api').collection('users').add({
+      name: 'New User',
+    });
+
+    expect(reference.id).toBe('new-user');
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/users',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ name: 'New User' }),
+      }),
+    );
+  });
+
   it('preserves the HTTP status for API failures', async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(
       JSON.stringify({ message: 'forbidden' }),

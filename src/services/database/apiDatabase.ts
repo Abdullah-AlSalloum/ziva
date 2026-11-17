@@ -151,9 +151,14 @@ class ApiCollectionReference implements CollectionReference {
   }
 
   async add(data: DocumentData) {
-    const reference = this.doc();
-    await reference.set(data);
-    return reference;
+    const result = await this.apiDatabase.request<DocumentData>(
+      `/${this.apiDatabase.pathFor(this.collectionName)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+    );
+    return this.doc(typeof result.id === 'string' ? result.id : createId());
   }
 
   limit(count: number) {
