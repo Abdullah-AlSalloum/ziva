@@ -141,7 +141,7 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
           <ul role="list" className="divide-y divide-gray-200/80 dark:divide-gray-700/80">
             {paginatedItems.map(item => (
               <li key={item.id} className="px-4 py-5 sm:px-6 hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors duration-200">
-                <div className="grid items-center gap-5 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:gap-5">
                   <div className="flex min-w-0 items-center gap-4">
                     <span className={`inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold ${item.quantity === 0 ? 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'}`}>
                       {item.quantity} {t('reorder.left')}
@@ -152,35 +152,37 @@ const ReorderSection: React.FC<ReorderSectionProps> = ({ items, users, onRestock
                       <p className="truncate text-sm text-gray-500 dark:text-gray-400">{item.type}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-start gap-2 md:justify-center">
-                    <label htmlFor={`restock-${item.id}`} className="sr-only">{t('reorder.restock')}</label>
-                    <div className="flex items-stretch overflow-hidden rounded-lg ring-1 ring-gray-300 dark:ring-gray-600">
-                        <input 
-                          id={`restock-${item.id}`}
-                          type="number"
-                          value={restockAmount[item.id] ?? 10}
-                          onChange={(e) => setRestockAmount({...restockAmount, [item.id]: parseInt(e.target.value, 10)})}
-                          className="w-16 border-0 bg-gray-50 px-3 py-2 text-center text-sm text-gray-900 focus:ring-2 focus:ring-inset focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
-                          min="1"
-                        />
-                        <button
-                          onClick={() => handleRestockClick(item.id)}
-                          className="inline-flex items-center gap-1.5 border-0 bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300"
-                          data-tooltip={t('reorder.restock')}
-                        >
-                          <PlusIcon className="w-4 h-4" />
-                          <span>{t('reorder.restock')}</span>
-                        </button>
+                  <div className="flex min-w-0 items-center justify-end gap-1 md:contents">
+                    <div className="flex items-center justify-end gap-2 md:justify-center">
+                      <label htmlFor={`restock-${item.id}`} className="sr-only">{t('reorder.restock')}</label>
+                      <div className="flex items-stretch overflow-hidden rounded-lg ring-1 ring-gray-300 dark:ring-gray-600">
+                          <input 
+                            id={`restock-${item.id}`}
+                            type="number"
+                            value={restockAmount[item.id] ?? 10}
+                            onChange={(e) => setRestockAmount({...restockAmount, [item.id]: parseInt(e.target.value, 10)})}
+                            className="w-12 border-0 bg-gray-50 px-2 py-1.5 text-center text-xs text-gray-900 focus:ring-2 focus:ring-inset focus:ring-emerald-500 dark:bg-gray-700 dark:text-white"
+                            min="1"
+                          />
+                          <button
+                            onClick={() => handleRestockClick(item.id)}
+                            className="inline-flex shrink-0 items-center gap-1 border-0 bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-300"
+                            data-tooltip={t('reorder.restock')}
+                          >
+                            <PlusIcon className="h-3.5 w-3.5" />
+                            <span>{t('reorder.restock')}</span>
+                          </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-start gap-1 border-gray-200 dark:border-gray-700 md:border-s md:ps-4 md:justify-center">
-                    <button onClick={() => setEditingItem(item)} data-tooltip={`${t('reorder.editItem')} ${item.name}`} className="rounded-lg p-2 text-gray-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`${t('reorder.editItem')} ${item.name}`}>
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button onClick={() => setPendingRemoval({ id: item.id, message: t('reorder.removeConfirmation').replace('{name}', item.name) })} data-tooltip={`${t('reorder.removeItem')} ${item.name}`} className="rounded-lg p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('reorder.removeItem')} ${item.name}`}>
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                    {pendingRemoval && <ConfirmDialog message={pendingRemoval.message} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemoveItem(pendingRemoval.id); setPendingRemoval(null); }} />}
+                    <div className="flex shrink-0 items-center justify-start gap-1 border-gray-200 dark:border-gray-700 md:border-s md:ps-4 md:justify-center">
+                      <button onClick={() => setEditingItem(item)} data-tooltip={`${t('reorder.editItem')} ${item.name}`} className="rounded-lg p-1.5 text-gray-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label={`${t('reorder.editItem')} ${item.name}`}>
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button onClick={() => setPendingRemoval({ id: item.id, message: t('reorder.removeConfirmation').replace('{name}', item.name) })} data-tooltip={`${t('reorder.removeItem')} ${item.name}`} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`${t('reorder.removeItem')} ${item.name}`}>
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                      {pendingRemoval && <ConfirmDialog message={pendingRemoval.message} onCancel={() => setPendingRemoval(null)} onConfirm={() => { onRemoveItem(pendingRemoval.id); setPendingRemoval(null); }} />}
+                    </div>
                   </div>
                 </div>
               </li>

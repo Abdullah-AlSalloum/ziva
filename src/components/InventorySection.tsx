@@ -26,19 +26,20 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
   const [reference, setReference] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('');
-  const [quantity, setQuantity] = useState(3);
+  const [quantity, setQuantity] = useState('3');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (reference && name && type && quantity >= 3) {
+    const parsedQuantity = Number.parseInt(quantity, 10);
+    if (reference && name && type && Number.isFinite(parsedQuantity) && parsedQuantity >= 3) {
       setIsSubmitting(true);
       try {
-        await onAddItem({ reference, name, type, quantity });
+        await onAddItem({ reference, name, type, quantity: parsedQuantity });
         setReference('');
         setName('');
         setType('');
-        setQuantity(3);
+        setQuantity('3');
         onCancel();
       } finally {
         setIsSubmitting(false);
@@ -64,7 +65,7 @@ const AddItemForm: React.FC<{ onAddItem: InventorySectionProps['onAddItem'], onC
             </label>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 lg:col-span-1">
               <span className="mb-2 block">{t('inventory.quantityMinimum')}</span>
-              <input type="number" value={quantity} onChange={e => setQuantity(parseInt(e.target.value, 10))} min="3" required className="block w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700/70 dark:text-white dark:placeholder:text-slate-400 sm:text-sm" />
+              <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} min="3" required className="block w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700/70 dark:text-white dark:placeholder:text-slate-400 sm:text-sm" />
             </label>
             <div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:justify-end lg:col-span-6">
                 <button type="button" onClick={onCancel} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">{t('inventory.cancel')}</button>

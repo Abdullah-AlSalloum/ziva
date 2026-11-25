@@ -797,6 +797,9 @@
   .h-2\.5 {
     height: calc(var(--spacing) * 2.5);
   }
+  .h-3\.5 {
+    height: calc(var(--spacing) * 3.5);
+  }
   .h-4 {
     height: calc(var(--spacing) * 4);
   }
@@ -880,6 +883,9 @@
   }
   .w-2\.5 {
     width: calc(var(--spacing) * 2.5);
+  }
+  .w-3\.5 {
+    width: calc(var(--spacing) * 3.5);
   }
   .w-4 {
     width: calc(var(--spacing) * 4);
@@ -1086,6 +1092,9 @@
   }
   .grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .grid-cols-\[minmax\(0\,1fr\)_auto\] {
+    grid-template-columns: minmax(0,1fr) auto;
   }
   .flex-col {
     flex-direction: column;
@@ -2335,6 +2344,9 @@
     .md\:block {
       display: block;
     }
+    .md\:contents {
+      display: contents;
+    }
     .md\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -2352,6 +2364,9 @@
     }
     .md\:justify-end {
       justify-content: flex-end;
+    }
+    .md\:gap-5 {
+      gap: calc(var(--spacing) * 5);
     }
     .md\:border-s {
       border-inline-start-style: var(--tw-border-style);
