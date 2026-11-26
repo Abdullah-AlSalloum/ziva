@@ -49,13 +49,56 @@ export const useAppController = () => {
   
   const [isSettingFirstPassword, setIsSettingFirstPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.Dashboard);
+  const [activeTab, setActiveTabState] = useState<Tab>(Tab.Dashboard);
   const [activeNotifications, setActiveNotifications] = useState<{id: number; message: string; type?: 'success' | 'error' | 'info'}[]>([]);
   const notificationIdCounter = useRef(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const notify = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setActiveNotifications(previous => [...previous, { id: notificationIdCounter.current++, message, type }]);
   };
+
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabState(tab);
+    if (typeof window === 'undefined') return;
+
+    const hash = `#${tab.toLowerCase()}`;
+    if (window.location.hash === hash) return;
+
+    window.history.pushState(
+      { ...window.history.state, appTab: tab },
+      '',
+      `${window.location.pathname}${window.location.search}${hash}`,
+    );
+  };
+
+  useEffect(() => {
+    if (!authenticatedUser) return;
+
+    const canAccessTab = (tab: Tab) =>
+      (tab !== Tab.Users || authenticatedUser.role === 'Owner') &&
+      (tab !== Tab.Audit || ['Owner', 'Manager'].includes(authenticatedUser.role));
+    const tabFromHash = Object.values(Tab).find(tab => `#${tab.toLowerCase()}` === window.location.hash);
+    const initialTab = tabFromHash && canAccessTab(tabFromHash) ? tabFromHash : Tab.Dashboard;
+    const url = new URL(window.location.href);
+    url.hash = initialTab.toLowerCase();
+    window.history.replaceState(
+      { ...window.history.state, appTab: initialTab },
+      '',
+      url,
+    );
+    setActiveTabState(initialTab);
+
+    const handlePopState = (event: PopStateEvent) => {
+      const stateTab = (event.state as { appTab?: unknown } | null)?.appTab;
+      const tab = Object.values(Tab).find(candidate => candidate === stateTab)
+        ?? Object.values(Tab).find(candidate => `#${candidate.toLowerCase()}` === window.location.hash)
+        ?? Tab.Dashboard;
+      setActiveTabState(canAccessTab(tab) ? tab : Tab.Dashboard);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [authenticatedUser]);
 
   useEffect(() => {
     document.documentElement.lang = language;
